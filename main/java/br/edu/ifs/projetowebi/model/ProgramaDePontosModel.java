@@ -16,6 +16,8 @@ public class ProgramaDePontosModel {
     private Long id;
 
     private String nome; // Smiles | Azul | Latam Pass
+    private Integer saldoPontos = 0;
+
 
     @OneToMany(mappedBy = "programaPontos", cascade = CascadeType.ALL)
     private List<CartaoModel> cartoes;
