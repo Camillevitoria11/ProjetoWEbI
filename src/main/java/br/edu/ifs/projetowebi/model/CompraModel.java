@@ -1,5 +1,8 @@
 package br.edu.ifs.projetowebi.model;
 
+
+
+
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -14,19 +17,28 @@ public class CompraModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String descricao;
-    private BigDecimal valor;
-    private Integer pontos;
+    private BigDecimal valorCompra;
+
+    private Integer pontosCalculados;
+
     private LocalDate dataCompra;
 
-    @Enumerated(EnumType.STRING)
-    private StatusCreditModel status;
+    private LocalDate prazoCredito;
 
-    @ManyToOne
-    @JoinColumn(name = "cartao_id")
-    private CartaoModel cartao;
+    @Enumerated(EnumType.STRING)
+    private StatusCreditoModel statusCredito; // pendente | creditado
+
+    private String comprovanteUrl;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private UsuarioModel usuario;
+
+    @ManyToOne
+    @JoinColumn(name = "cartao_id")
+    private CartaoModel cartao;
 }
+
+
+
+
