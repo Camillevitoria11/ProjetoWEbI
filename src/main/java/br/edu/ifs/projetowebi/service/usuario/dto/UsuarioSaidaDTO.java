@@ -1,4 +1,4 @@
-package br.edu.ifs.projetowebi.dto;
+package br.edu.ifs.projetowebi.service.usuario.dto;
 
 
 import lombok.Data;

@@ -18,12 +18,12 @@ public class CartaoService {
 
     private CartaoRepository cartaoRepository;
 
-//
+
 //    public CartaoSaidaDTO salvar(CartaoForm cartao) {
 //        if (cartao.getMultiplicadorPontos() == null) {
 //            cartao.setMultiplicadorPontos(new java.math.BigDecimal("1.0"));
 //        }
-//        return new CartaoSaidaDTO();
+//        return new CartaoSaidaDTO(model.);
 //    }
 //
 //    public List<CartaoSaidaDTO> listarTodos(){

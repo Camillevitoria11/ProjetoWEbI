@@ -1,7 +1,6 @@
 package br.edu.ifs.projetowebi.service.programadepontos.dto;
 
 
-import br.edu.ifs.projetowebi.dto.UsuarioSaidaDTO;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
