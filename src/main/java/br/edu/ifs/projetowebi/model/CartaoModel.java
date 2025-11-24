@@ -3,35 +3,33 @@ package br.edu.ifs.projetowebi.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.math.BigDecimal;
-import java.util.List;
 
 @Data
 @Entity
 @Table(name = "cartoes")
 public class CartaoModel {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+
     private Long id;
-
     private String nomeCartao;
-
-    @Enumerated(EnumType.STRING)
-    //private BandeiraCartaoModel bandeira; // Visa | Master | Elo...
-
-    @ManyToOne
-    @JoinColumn(name = "programa_id")
-    private ProgramaDePontosModel programaPontos;
+    private Double multiplicadorPontos;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
     private UsuarioModel usuario;
 
-    private BigDecimal multiplicadorPontos; // Ex.: 2.0 (2 pontos por real)
+    @ManyToOne
+    @JoinColumn(name = "programa_pontos_id")
+    private ProgramaDePontosModel programaPontos;
 
-    @OneToMany(mappedBy = "cartao", cascade = CascadeType.ALL)
-    private List<CompraModel> compras;
+    public Double getMultiplicadorPontos() {
+        return multiplicadorPontos;
+    }
+
+    public void setMultiplicadorPontos(Double multiplicadorPontos) {
+        this.multiplicadorPontos = multiplicadorPontos;
+    }
 }
 
 
