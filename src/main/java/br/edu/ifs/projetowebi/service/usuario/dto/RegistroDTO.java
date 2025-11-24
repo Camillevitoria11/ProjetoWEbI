@@ -9,14 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class RegistroDTO {
-    @NotBlank(message = "Nome é obrigatório")
     private String nome;
-
-    @NotBlank(message = "Email é obrigatório")
-    @Email(message = "Email deve ser válido")
     private String email;
-
-    @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
     private String senha;
 }
