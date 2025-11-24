@@ -14,5 +14,6 @@ public class UsuarioSaidaDTO {
     private String nome;
     private String email;
     private String senha; // senha normal enviada no JSON
+
 }
 

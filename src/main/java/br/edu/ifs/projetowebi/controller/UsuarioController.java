@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/usuarios")
 @CrossOrigin(origins = "*")
@@ -30,17 +32,15 @@ public class UsuarioController {
     public ResponseEntity<UsuarioModel> buscarPorEmail(@PathVariable String email) {
         return ResponseEntity.ok(usuarioService.buscarPorEmail(email));
     }
-    @DeleteMapping("/id")
+    @DeleteMapping("/{id}")
     public ResponseEntity<UsuarioModel> remover(@PathVariable Long id) {
         usuarioService.deletarPorId(id);
         return ResponseEntity.noContent().build();
     }
-    @GetMapping("id")
-    public ResponseEntity<UsuarioSaidaDTO> listarPorId() {
-        return ResponseEntity.ok((UsuarioSaidaDTO) usuarioService.listarTodosUsuarios());
+    @GetMapping
+    public ResponseEntity<List<UsuarioSaidaDTO>> listarTodos() {
+        return ResponseEntity.ok(usuarioService.listarTodosUsuarios());
     }
-
-
    }
 
 

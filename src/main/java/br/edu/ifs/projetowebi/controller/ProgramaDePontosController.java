@@ -42,7 +42,6 @@ public class ProgramaDePontosController {
         return ResponseEntity.ok(service.atualizarSaldo(id, dto.getSaldoPontos()));
     }
 
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         service.deletar(id);

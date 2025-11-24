@@ -20,32 +20,27 @@ public class UsuarioService {
 //    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
     public UsuarioModel cadastrarUsuario(UsuarioSaidaDTO dto) {
-
         // Validar email repetido
         usuarioRepository.findByEmail(dto.getEmail()).ifPresent(u -> {
             throw new RuntimeException("Email já cadastrado!");
         });
-
         UsuarioModel usuario = new UsuarioModel();
-
         usuario.setNome(dto.getNome());
         usuario.setEmail(dto.getEmail());
-
 //        // Criptografar senha
 //        String senhaCriptografada = encoder.encode(dto.getSenha());
         usuario.setSenhaHash(dto.getSenha());
-
         return usuarioRepository.save(usuario);
     }
 
     public UsuarioModel buscarPorId(Long id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
     }
 
     public UsuarioModel buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
     }
 
     public void  deletarPorId(Long id) {
@@ -64,6 +59,15 @@ public class UsuarioService {
                                 usuarioModel.getEmail()
                         ))
                 .toList();
+    }
+
+    public UsuarioSaidaDTO atualizarUsuario(long id) {
+        UsuarioModel usuario = usuarioRepository.findById(id).orElseThrow(()->
+                new NaoEncontradoException("Usuario não encontrado"));
+        return new UsuarioSaidaDTO(
+                usuario.getNome(),
+                usuario.getEmail(),
+                usuario.getSenhaHash());
     }
 }
 

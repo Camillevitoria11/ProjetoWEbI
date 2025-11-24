@@ -29,14 +29,6 @@ public class ProgramaDePontosService {
         );
     }
 
-//    public ProgramaDePontosModel atualizarSaldo(Long id, Integer pontos) {
-//        ProgramaDePontosModel programa = programaRepository.findById(id)
-//                .orElseThrow(() -> new NaoEncontradoException("Programa não encontrado"));
-//
-//        programa.setSaldoPontos(programa.getSaldoPontos() + pontos);
-//        return programaRepository.save(programa);
-//    }
-
     public ProgramaDePontosSaidaDTO atualizarSaldo(Long id, Integer pontos) {
         ProgramaDePontosModel programa = programaRepository.findById(id)
                 .orElseThrow(() -> new NaoEncontradoException("Programa não encontrado"));
