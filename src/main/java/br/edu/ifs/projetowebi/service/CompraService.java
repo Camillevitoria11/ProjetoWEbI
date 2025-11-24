@@ -1,48 +1,45 @@
-//package br.edu.ifs.projetowebi.service;
-//
-//
-//import br.edu.ifs.projetowebi.model.CompraModel;
-//import br.edu.ifs.projetowebi.model.CartaoModel;
-//import br.edu.ifs.projetowebi.model.StatusCreditoModel;
-//import br.edu.ifs.projetowebi.repository.CompraRepository;
-//import br.edu.ifs.projetowebi.repository.CartaoRepository;
-//import br.edu.ifs.projetowebi.service.programadepontos.ProgramaDePontosService;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.stereotype.Service;
-//
-//import java.time.LocalDate;
-//
-//@Service
-//public class CompraService {
-//
-//    @Autowired
-//    private CompraRepository compraRepository;
-//
-//    @Autowired
-//    private CartaoRepository cartaoRepository;
-//
-//    @Autowired
-//    private ProgramaDePontosService programaService;
-//
-//    public CompraModel registrarCompra(CompraModel compra) {
-//
-//        CartaoModel cartao = cartaoRepository.findById(compra.getCartao().getId())
-//                .orElseThrow(() -> new RuntimeException("Cartão não encontrado"));
-//
-//        // calcular pontos = valor * multiplicador
-//        var pontos = compra.getValorCompra()
-//                .multiply(cartao.getMultiplicadorPontos())
-//                .intValue();
-//
-//        compra.setPontosCalculados(pontos);
-//        compra.setDataCompra(LocalDate.now());
-//        compra.setStatusCredito(StatusCreditoModel.valueOf("PENDENTE"));
-//
-//        // atualizar saldo no programa
-//        programaService.atualizar(cartao.getProgramaPontos().getId(), pontos);
-//
-//        return compraRepository.save(compra);
-//    }
+package br.edu.ifs.projetowebi.service;
 
-//}
+import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
+import br.edu.ifs.projetowebi.model.CompraModel;
+import br.edu.ifs.projetowebi.model.CartaoModel;
+import br.edu.ifs.projetowebi.model.StatusCreditModel;
+import br.edu.ifs.projetowebi.repository.CompraRepository;
+import br.edu.ifs.projetowebi.repository.CartaoRepository;
+import br.edu.ifs.projetowebi.service.programadepontos.ProgramaDePontosService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
+@RequiredArgsConstructor
+@Service
+public class CompraService {
+
+    private final CompraRepository compraRepository;
+    private final CartaoRepository cartaoRepository;
+    private final ProgramaDePontosService programaService;
+
+    public CompraModel registrarCompra(CompraModel compra) {
+        CartaoModel cartao = cartaoRepository.findById(compra.getCartao().getId())
+                .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado"));
+
+        // Calcular pontos = valor * multiplicador
+        // Use getValor() em vez de getValorCompra()
+        var pontos = compra.getValor()
+                .multiply(cartao.getMultiplicadorPontos())
+                .intValue();
+
+        // Use setPontos() em vez de setPontosCalculados()
+        compra.setPontos(pontos);
+        compra.setDataCompra(LocalDate.now());
+
+        // Use o enum diretamente
+        compra.setStatus(StatusCreditModel.PENDENTE);
+
+        // Atualizar saldo no programa - use atualizarSaldo()
+        programaService.atualizarSaldo(cartao.getProgramaPontos().getId(), pontos);
+
+        return compraRepository.save(compra);
+    }
+}

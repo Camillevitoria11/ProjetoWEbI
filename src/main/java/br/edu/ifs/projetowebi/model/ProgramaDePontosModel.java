@@ -2,6 +2,7 @@ package br.edu.ifs.projetowebi.model;
 
 
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class ProgramaDePontosModel {
 
     @ManyToOne
     @JoinColumn(name = "usuario_id") // Esta coluna deve existir na tabela programas_pontos
+    @JsonIgnoreProperties({"programasDePontos", "cartoes", "senhaHash"}) // ✅ Ignora campos problemáticos
     private UsuarioModel usuario;
 }
 
