@@ -22,14 +22,14 @@ import java.util.List;
             return ResponseEntity.ok(cartaoService.salvar(cartao));
         }
 
-        @GetMapping("/usuario/{usuarioId}")
+        @GetMapping("/{id}")
         public ResponseEntity<List<CartaoModel>> listarPorUsuario(@PathVariable Long usuarioId) {
             return ResponseEntity.ok(cartaoService.listarPorUsuario(usuarioId));
         }
 
-        @PutMapping("{/usuarioId}")
+        @PutMapping("/{id}")
         public ResponseEntity<CartaoModel> atualizar(@PathVariable Long usuarioId, @RequestBody CartaoModel cartao) {
-            return ResponseEntity.ok(cartaoService );
+            return ResponseEntity.ok(cartao);
         }
      }
 

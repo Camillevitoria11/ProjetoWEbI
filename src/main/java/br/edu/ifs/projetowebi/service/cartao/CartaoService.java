@@ -1,7 +1,7 @@
 package br.edu.ifs.projetowebi.service.cartao;
 
 import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
-//import br.edu.ifs.projetowebi.model.CartaoModel;
+import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
