@@ -21,31 +21,31 @@ public class CartaoController {
         return ResponseEntity.ok(cartaoService.salvar(cartao));
     }
 
-    // ✅ CORRIGIDO: Listar todos os cartões
+    // Listar todos os cartões
     @GetMapping
     public ResponseEntity<List<CartaoModel>> listarTodos() {
         return ResponseEntity.ok(cartaoService.listarTodos());
     }
 
-    // ✅ CORRIGIDO: Listar cartões por usuário
+    // Listar cartões por usuário
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<CartaoModel>> listarPorUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(cartaoService.listarPorUsuario(usuarioId));
     }
 
-    // ✅ CORRIGIDO: Buscar cartão por ID
+    // Buscar cartão por ID
     @GetMapping("/{id}")
     public ResponseEntity<CartaoModel> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(cartaoService.buscarPorId(id));
     }
 
-    // ✅ CORRIGIDO: Atualizar cartão
+    // Atualizar cartão
     @PutMapping("/{id}")
     public ResponseEntity<CartaoModel> atualizar(@PathVariable Long id, @RequestBody CartaoModel cartao) {
         return ResponseEntity.ok(cartaoService.atualizar(id, cartao));
     }
 
-    // ✅ CORRIGIDO: Deletar cartão
+    // Deletar cartão
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         cartaoService.deletar(id);

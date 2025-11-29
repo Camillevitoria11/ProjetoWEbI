@@ -1,8 +1,5 @@
 package br.edu.ifs.projetowebi.model;
 
-
-
-
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
