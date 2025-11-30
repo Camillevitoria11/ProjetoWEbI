@@ -18,12 +18,12 @@ public class CartaoService {
     private CartaoRepository cartaoRepository;
 
 
-//    public CartaoSaidaDTO salvar(CartaoModel cartao) {
-//        if (cartao.getMultiplicadorPontos() == null) {
-//            cartao.setMultiplicadorPontos(new java.math.BigDecimal("1.0"));
-//        }
-//        return new CartaoSaidaDTO();
-//    }
+    public CartaoSaidaDTO salvar(CartaoModel cartao) {
+        if (cartao.getMultiplicadorPontos() == null) {
+            cartao.setMultiplicadorPontos(new java.math.BigDecimal("1.0"));
+        }
+        return new CartaoSaidaDTO();
+    }
 
     public List<CartaoSaidaDTO> listarTodos(){
         return cartaoRepository.findAll().stream().map(cartaoModel->
@@ -32,22 +32,21 @@ public class CartaoService {
                        cartaoModel.getNomeCartao()
         )).toList();
 
-<<<<<<< HEAD
     }
-=======
-    public CartaoModel salvar(CartaoModel cartao) {
-        if (cartao.getMultiplicadorPontos() == null) {
-            cartao.setMultiplicadorPontos(1.0);
-        }
-        return cartaoRepository.save(cartao);
-    }
+//    public CartaoModel salvar(CartaoModel cartao) {
+//        if (cartao.getMultiplicadorPontos() == null) {
+//            cartao.setMultiplicadorPontos(1.0);
+//        }
+//        return cartaoRepository.save(cartao);
+//    }
 
-    public List<CartaoModel> listarTodos() {
-        return cartaoRepository.findAll();
-    }
+//    public List<CartaoModel> listarTodos() {
+//        return cartaoRepository.findAll();
+//    }
 
     //Listar cartões por usuário
-    public List<CartaoModel> listarPorUsuario(Long usuarioId) {
+    public List<CartaoModel> listarPorUsuario(Long usuarioId)
+    {
         return cartaoRepository.findByUsuarioId(usuarioId);
     }
 
@@ -69,8 +68,6 @@ public class CartaoService {
 
         return cartaoRepository.save(cartaoExistente);
     }
-
->>>>>>> 662bc59244ab6d98532d928b30e331b2845ccc7b
     public void deletar(Long id) {
         if (!cartaoRepository.existsById(id)) {
             throw new NaoEncontradoException("Programa não encontrado");

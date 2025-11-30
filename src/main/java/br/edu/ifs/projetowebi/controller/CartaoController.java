@@ -2,6 +2,7 @@ package br.edu.ifs.projetowebi.controller;
 
 import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.service.cartao.CartaoService;
+import br.edu.ifs.projetowebi.service.cartao.dto.CartaoSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,13 +18,13 @@ public class CartaoController {
     private final CartaoService cartaoService;
 
     @PostMapping
-    public ResponseEntity<CartaoModel> salvar(@RequestBody CartaoModel cartao) {
+    public ResponseEntity<CartaoSaidaDTO> salvar(@RequestBody CartaoModel cartao) {
         return ResponseEntity.ok(cartaoService.salvar(cartao));
     }
 
     // Listar todos os cartões
     @GetMapping
-    public ResponseEntity<List<CartaoModel>> listarTodos() {
+    public ResponseEntity<List<CartaoSaidaDTO>> listarTodos() {
         return ResponseEntity.ok(cartaoService.listarTodos());
     }
 
