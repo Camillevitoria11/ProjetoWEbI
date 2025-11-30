@@ -4,9 +4,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class ProjetoWEBIApplication {
+public class ProjetoWEBiApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(ProjetoWEBIApplication.class, args);
+        SpringApplication.run(ProjetoWEBiApplication.class, args);
     }
 }
