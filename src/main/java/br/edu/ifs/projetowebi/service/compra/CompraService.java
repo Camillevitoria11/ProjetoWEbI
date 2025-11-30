@@ -59,5 +59,5 @@ public class CompraService {
                 compraSalva.getDataCompra(),
                 compraSalva.getComprovanteUrl()
         );
-       }
+    }
     }
