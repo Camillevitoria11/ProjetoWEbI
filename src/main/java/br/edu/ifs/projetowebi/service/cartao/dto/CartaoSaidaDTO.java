@@ -11,4 +11,8 @@ import lombok.Setter;
 public class CartaoSaidaDTO {
     private String idCartao;
     private String nomeCartao;
+
+    public CartaoSaidaDTO() {
+
+    }
 }

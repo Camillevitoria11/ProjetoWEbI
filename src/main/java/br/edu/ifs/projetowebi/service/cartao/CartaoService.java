@@ -33,17 +33,6 @@ public class CartaoService {
         )).toList();
 
     }
-//    public CartaoModel salvar(CartaoModel cartao) {
-//        if (cartao.getMultiplicadorPontos() == null) {
-//            cartao.setMultiplicadorPontos(1.0);
-//        }
-//        return cartaoRepository.save(cartao);
-//    }
-
-//    public List<CartaoModel> listarTodos() {
-//        return cartaoRepository.findAll();
-//    }
-
     //Listar cartões por usuário
     public List<CartaoModel> listarPorUsuario(Long usuarioId)
     {
