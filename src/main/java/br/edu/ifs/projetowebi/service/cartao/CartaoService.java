@@ -1,41 +1,33 @@
 package br.edu.ifs.projetowebi.service.cartao;
 
-
 import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
-//import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
 import br.edu.ifs.projetowebi.service.cartao.dto.CartaoSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 public class CartaoService {
 
-    private final CartaoService cartao;
-    private CartaoRepository cartaoRepository;
+    private final CartaoRepository cartaoRepository;
 
-
-    public CartaoSaidaDTO salvar(CartaoModel cartao) {
+    public CartaoModel salvar(CartaoModel cartao) {
         if (cartao.getMultiplicadorPontos() == null) {
-            cartao.setMultiplicadorPontos(new java.math.BigDecimal("1.0"));
+            cartao.setMultiplicadorPontos(BigDecimal.valueOf(1.0));
         }
-        return new CartaoSaidaDTO();
+        return cartaoRepository.save(cartao);
     }
 
-    public List<CartaoSaidaDTO> listarTodos(){
-        return cartaoRepository.findAll().stream().map(cartaoModel->
-               new CartaoSaidaDTO(
-                       cartaoModel.getNomeCartao(),
-                       cartaoModel.getNomeCartao()
-        )).toList();
-
+    public List<CartaoModel> listarTodos() {
+        return cartaoRepository.findAll();
     }
-    //Listar cartões por usuário
-    public List<CartaoModel> listarPorUsuario(Long usuarioId)
-    {
+
+    public List<CartaoModel> listarPorUsuario(Long usuarioId) {
         return cartaoRepository.findByUsuarioId(usuarioId);
     }
 
@@ -57,11 +49,21 @@ public class CartaoService {
 
         return cartaoRepository.save(cartaoExistente);
     }
+
     public void deletar(Long id) {
         if (!cartaoRepository.existsById(id)) {
-            throw new NaoEncontradoException("Programa não encontrado");
+            throw new NaoEncontradoException("Cartão não encontrado");
         }
         cartaoRepository.deleteById(id);
     }
-}
 
+    public List<CartaoSaidaDTO> listarTodosDTO() {
+        return cartaoRepository.findAll().stream()
+                .map(cartaoModel -> new CartaoSaidaDTO(
+                        cartaoModel.getId(),
+                        cartaoModel.getNomeCartao(),
+                        cartaoModel.getMultiplicadorPontos()
+                ))
+                .toList();
+    }
+}

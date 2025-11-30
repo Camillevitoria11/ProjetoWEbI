@@ -1,7 +1,7 @@
 package br.edu.ifs.projetowebi.controller;
 
 import br.edu.ifs.projetowebi.service.programadepontos.dto.ProgramaDePontosSaidaDTO;
-import br.edu.ifs.projetowebi.service.programadepontos.ProgramaDePontosService;
+import br.edu.ifs.projetowebi.service.programadepontos.ProgramaDoUsuarioService;
 import br.edu.ifs.projetowebi.service.programadepontos.form.ProgramaDePontosForm;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/programas-pontos")
+@RequestMapping("/programas_usuario")
 @RequiredArgsConstructor
 public class ProgramaDePontosController {
 
-    private final ProgramaDePontosService service;
+    private final ProgramaDoUsuarioService service;
 
 
     @PostMapping

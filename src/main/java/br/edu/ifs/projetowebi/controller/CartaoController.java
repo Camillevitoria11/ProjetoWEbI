@@ -18,13 +18,13 @@ public class CartaoController {
     private final CartaoService cartaoService;
 
     @PostMapping
-    public ResponseEntity<CartaoSaidaDTO> salvar(@RequestBody CartaoModel cartao) {
+    public ResponseEntity<CartaoModel> salvar(@RequestBody CartaoModel cartao) {
         return ResponseEntity.ok(cartaoService.salvar(cartao));
     }
 
     // Listar todos os cartões
     @GetMapping
-    public ResponseEntity<List<CartaoSaidaDTO>> listarTodos() {
+    public ResponseEntity<List<CartaoModel>> listarTodos() {
         return ResponseEntity.ok(cartaoService.listarTodos());
     }
 
@@ -51,5 +51,11 @@ public class CartaoController {
     public ResponseEntity<Void> deletar(@PathVariable Long id) {
         cartaoService.deletar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ✅ OPÇÃO ALTERNATIVA: Se quiser usar DTOs em alguns endpoints
+    @GetMapping("/dto")
+    public ResponseEntity<List<CartaoSaidaDTO>> listarTodosDTO() {
+        return ResponseEntity.ok(cartaoService.listarTodosDTO());
     }
 }

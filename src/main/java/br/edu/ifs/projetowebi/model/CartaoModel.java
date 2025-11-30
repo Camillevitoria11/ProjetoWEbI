@@ -18,11 +18,11 @@ public class CartaoModel {
     private String nomeCartao;
 
     @Enumerated(EnumType.STRING)
-    //private BandeiraCartaoModel bandeira; // Visa | Master | Elo...
+    private BandeiraCartaoModel bandeira; // Visa | Master | Elo...
 
     @ManyToOne
     @JoinColumn(name = "programa_id")
-    private ProgramaDePontosModel programaPontos;
+    private ProgramaDoUsuarioModel programaPontos;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id")
