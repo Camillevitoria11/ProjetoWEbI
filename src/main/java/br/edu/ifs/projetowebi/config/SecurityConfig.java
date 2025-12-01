@@ -31,7 +31,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll() // Login e registro públicos
                         .requestMatchers("/public/**").permitAll() // Endpoints públicos
-                        .requestMatchers("/programas-pontos/**").permitAll()
+                        .requestMatchers("/programas_usuario/**").permitAll()
                         .requestMatchers("/cartoes/**").permitAll()
                         .requestMatchers("/usuarios/**").permitAll()
                         .anyRequest().authenticated() // Resto precisa de autenticação

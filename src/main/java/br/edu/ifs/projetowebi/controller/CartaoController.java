@@ -29,7 +29,7 @@ public class CartaoController {
     }
 
     // Listar cartões por usuário
-    @GetMapping("/usuario/{usuarioId}")
+    @GetMapping("/{usuarioId}")
     public ResponseEntity<List<CartaoModel>> listarPorUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(cartaoService.listarPorUsuario(usuarioId));
     }
