@@ -1,26 +1,24 @@
 package br.edu.ifs.projetowebi.config;
 
+import br.edu.ifs.projetowebi.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
+@Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
-    private final UserDetailsService userDetailsService;
-
-    public JwtAuthenticationFilter(TokenService tokenService, UserDetailsService userDetailsService) {
-        this.tokenService = tokenService;
-        this.userDetailsService = userDetailsService;
-    }
+    private final UserDetailsServiceImpl userDetailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
@@ -28,10 +26,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = recuperarToken(request);
 
         if (token != null && tokenService.isTokenValido(token)) {
-            Long idUsuario = tokenService.getIdUsuario(token);
-            UserDetails usuario = userDetailsService.loadUserByUsername(idUsuario.toString());
+            String userName  = tokenService.getUserName(token);
+            UserDetails usuario = userDetailsService.loadUserByUsername(userName);
 
-            var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
+            var authentication = new UsernamePasswordAuthenticationToken(usuario, userName, usuario.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
@@ -39,10 +37,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String recuperarToken(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
-        }
-        return null;
+        String authHeader= request.getHeader("Authorization");
+
+        return authHeader==null
+                ? null
+                :authHeader.replace("Bearer", "");
     }
 }

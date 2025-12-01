@@ -1,6 +1,7 @@
 package br.edu.ifs.projetowebi.config;
 
 import br.edu.ifs.projetowebi.repository.UsuarioRepository;
+import br.edu.ifs.projetowebi.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UsuarioRepository usuarioRepository;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -32,20 +33,19 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll() // Login e registro públicos
                         .requestMatchers("/public/**").permitAll() // Endpoints públicos
                         .requestMatchers("/programas_usuario/**").permitAll()
-                        .requestMatchers("/cartoes/**").permitAll()
                         .requestMatchers("/usuarios/**").permitAll()
                         .requestMatchers("/compras/**").permitAll()
                         .anyRequest().authenticated() // Resto precisa de autenticação
                 )
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // ✅ DESCOMENTE quando JWT estiver pronto
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // ✅ DESCOMENTE quando JWT estiver pronto
 
         return http.build();
     }
 
-    @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(tokenService(), userDetailsService());
-    }
+//    @Bean
+//    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+//        return new JwtAuthenticationFilter(tokenService(), userDetailsService());
+//    }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -57,14 +57,14 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return username -> usuarioRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
-    }
+//    @Bean
+//    public UserDetailsService userDetailsService() {
+//        return username -> usuarioRepository.findByEmail(username)
+//                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + username));
+//    }
 
-    @Bean
-    public TokenService tokenService() {
-        return new TokenService();
-    }
+//    @Bean
+//    public TokenService tokenService() {
+//        return new TokenService();
+//    }
 }

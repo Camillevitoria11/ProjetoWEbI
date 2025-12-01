@@ -1,6 +1,8 @@
 package br.edu.ifs.projetowebi.config;
 
+import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
 import br.edu.ifs.projetowebi.model.UsuarioModel;
+import br.edu.ifs.projetowebi.repository.UsuarioRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -21,6 +23,7 @@ public class TokenService {
     @Value("${jwt.expiration:86400000}")
     private String expiration;
 
+
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
@@ -32,7 +35,7 @@ public class TokenService {
 
         return Jwts.builder()
                 .setIssuer("API Projeto Web I")
-                .setSubject(usuario.getId().toString())
+                .setSubject(usuario.getUsername())
                 .setIssuedAt(hoje)
                 .setExpiration(expiracao)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -51,12 +54,12 @@ public class TokenService {
         }
     }
 
-    public Long getIdUsuario(String token) {
+    public String getUserName (String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return Long.parseLong(claims.getSubject());
+      return  claims.getSubject();
     }
 }
