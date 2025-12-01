@@ -1,4 +1,4 @@
-package br.edu.ifs.projetowebi.service.compra.tdo;
+package br.edu.ifs.projetowebi.service.compra.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

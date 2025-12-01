@@ -4,7 +4,7 @@ import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
 import br.edu.ifs.projetowebi.repository.CompraRepository;
-import br.edu.ifs.projetowebi.service.compra.tdo.CompraSaidaDTO;
+import br.edu.ifs.projetowebi.service.compra.dto.CompraSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

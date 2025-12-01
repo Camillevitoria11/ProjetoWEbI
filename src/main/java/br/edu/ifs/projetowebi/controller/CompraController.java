@@ -3,7 +3,7 @@ package br.edu.ifs.projetowebi.controller;
 
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.service.compra.CompraService;
-import br.edu.ifs.projetowebi.service.compra.tdo.CompraSaidaDTO;
+import br.edu.ifs.projetowebi.service.compra.dto.CompraSaidaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
