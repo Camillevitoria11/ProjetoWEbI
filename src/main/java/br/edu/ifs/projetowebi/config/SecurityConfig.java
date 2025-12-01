@@ -34,6 +34,7 @@ public class SecurityConfig {
                         .requestMatchers("/programas_usuario/**").permitAll()
                         .requestMatchers("/cartoes/**").permitAll()
                         .requestMatchers("/usuarios/**").permitAll()
+                        .requestMatchers("/compras/**").permitAll()
                         .anyRequest().authenticated() // Resto precisa de autenticação
                 )
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class); // ✅ DESCOMENTE quando JWT estiver pronto
