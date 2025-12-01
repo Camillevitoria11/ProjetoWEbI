@@ -24,8 +24,13 @@ public class CartaoController {
 
     // Listar todos os cartões
     @GetMapping
-    public ResponseEntity<List<CartaoModel>> listarTodos() {
-        return ResponseEntity.ok(cartaoService.listarTodos());
+    public ResponseEntity<List<CartaoSaidaDTO>> listarTodos() {
+        return ResponseEntity.ok(cartaoService.listarTodosDTO());
+    }
+
+    @GetMapping("/detalhes/{id}")
+    public ResponseEntity<CartaoSaidaDTO> buscarDetalhes(@PathVariable Long id) {
+        return ResponseEntity.ok(cartaoService.buscarDetalhesPorId(id));
     }
 
     // Listar cartões por usuário

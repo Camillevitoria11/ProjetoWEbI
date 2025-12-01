@@ -19,12 +19,12 @@ public class ProgramaDoUsuarioModel {
     @Column(name = "saldo_pontos")
     private Integer saldoPontos = 0;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id")
     @JsonIgnoreProperties({"programasDePontos", "cartoes", "senhaHash"})
     private UsuarioModel usuario;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "programa_catalogo_id")
     private ProgramaCatalogoModel programaCatalogo;
 }

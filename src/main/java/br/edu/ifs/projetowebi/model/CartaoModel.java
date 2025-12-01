@@ -1,6 +1,7 @@
 package br.edu.ifs.projetowebi.model;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -20,17 +21,18 @@ public class CartaoModel {
     @Enumerated(EnumType.STRING)
     private BandeiraCartaoModel bandeira; // Visa | Master | Elo...
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "programa_id")
     private ProgramaDoUsuarioModel programaPontos;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id")
     private UsuarioModel usuario;
 
     private BigDecimal multiplicadorPontos; // Ex.: 2.0 (2 pontos por real)
 
-    @OneToMany(mappedBy = "cartao", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "cartao", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore // EVITA LOOP INFINITO
     private List<CompraModel> compras;
 }
 

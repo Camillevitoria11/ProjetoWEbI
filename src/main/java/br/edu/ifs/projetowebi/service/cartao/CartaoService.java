@@ -59,11 +59,30 @@ public class CartaoService {
 
     public List<CartaoSaidaDTO> listarTodosDTO() {
         return cartaoRepository.findAll().stream()
-                .map(cartaoModel -> new CartaoSaidaDTO(
-                        cartaoModel.getId(),
-                        cartaoModel.getNomeCartao(),
-                        cartaoModel.getMultiplicadorPontos()
+                .map(cartao -> new CartaoSaidaDTO(
+                        cartao.getId(),
+                        cartao.getNomeCartao(),
+                        cartao.getMultiplicadorPontos(),
+                        cartao.getBandeira() != null ? cartao.getBandeira().name() : null,
+                        cartao.getUsuario() != null ? cartao.getUsuario().getNome() : null,
+                        cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getNome() : null,
+                        cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getSaldoPontos() : 0
                 ))
                 .toList();
+    }
+
+    public CartaoSaidaDTO buscarDetalhesPorId(Long id) {
+        CartaoModel cartao = cartaoRepository.findById(id)
+                .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado"));
+
+        return new CartaoSaidaDTO(
+                cartao.getId(),
+                cartao.getNomeCartao(),
+                cartao.getMultiplicadorPontos(),
+                cartao.getBandeira() != null ? cartao.getBandeira().name() : null,
+                cartao.getUsuario() != null ? cartao.getUsuario().getNome() : null,
+                cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getNome() : null,
+                cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getSaldoPontos() : 0
+        );
     }
 }

@@ -14,4 +14,8 @@ public class CartaoSaidaDTO {
     private Long idCartao;
     private String nomeCartao;
     private BigDecimal multiplicadorPontos;
+    private String bandeira;
+    private String nomeUsuario;
+    private String nomePrograma;
+    private Integer saldoPrograma;
 }
