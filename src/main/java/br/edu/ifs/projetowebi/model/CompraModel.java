@@ -40,7 +40,7 @@ public class CompraModel {
     @JsonIgnore
     private CartaoModel cartao;
 
-    // Método para calcular data de crédito baseado no programa
+    // Metodo para calcular data de crédito baseado no programa
     public void calcularDataCredito() {
         if (this.cartao != null &&
                 this.cartao.getProgramaPontos() != null &&
@@ -53,7 +53,7 @@ public class CompraModel {
         }
     }
 
-    // Método para calcular pontos automaticamente
+    // Metodo para calcular pontos automaticamente
     public void calcularPontos() {
         if (this.cartao != null && this.cartao.getMultiplicadorPontos() != null && this.valor != null) {
             BigDecimal multiplicador = this.cartao.getMultiplicadorPontos();
@@ -62,7 +62,7 @@ public class CompraModel {
         }
     }
 
-    // Método executado antes de salvar
+    // Metodo executado antes de salvar
     @PrePersist
     protected void prePersist() {
         if (this.dataCompra == null) {
@@ -72,7 +72,7 @@ public class CompraModel {
         this.calcularDataCredito();
     }
 
-    // Método para creditar pontos
+    // Metodo para creditar pontos
     public boolean creditarPontos() {
         if (this.statusCredito == StatusCreditModel.PENDENTE &&
                 this.cartao != null &&

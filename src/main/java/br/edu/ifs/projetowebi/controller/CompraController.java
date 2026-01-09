@@ -1,8 +1,10 @@
 package br.edu.ifs.projetowebi.controller;
 
+import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.model.StatusCreditModel;
 import br.edu.ifs.projetowebi.service.compra.CompraService;
+import br.edu.ifs.projetowebi.service.compra.dto.CompraEntradaDTO;
 import br.edu.ifs.projetowebi.service.compra.dto.CompraSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,11 +21,25 @@ public class CompraController {
 
     private final CompraService compraService;
 
+
+
     @PostMapping("/registrar")
-    public ResponseEntity<CompraModel> registrarCompra(@RequestBody CompraModel compra) {
-        CompraModel novaCompra = compraService.registrarCompra(compra);
-        return ResponseEntity.status(HttpStatus.CREATED).body(novaCompra);
+    public ResponseEntity<CompraSaidaDTO> registrarCompra(
+            @RequestBody CompraEntradaDTO dto) {
+
+        CompraModel compra = new CompraModel();
+        compra.setDescricao(dto.getDescricao());
+        compra.setValor(dto.getValor());
+
+        CartaoModel cartao = new CartaoModel();
+        cartao.setId(dto.getCartaoId());
+        compra.setCartao(cartao);
+
+        CompraModel compraSalva = compraService.registrarCompra(compra);
+
+        return ResponseEntity.ok(CompraSaidaDTO.fromEntity(compraSalva));
     }
+
 
     @GetMapping
     public ResponseEntity<List<CompraModel>> listarTodasCompras() {
