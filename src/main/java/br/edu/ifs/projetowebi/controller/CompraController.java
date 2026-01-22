@@ -34,12 +34,16 @@ public class CompraController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CompraSaidaDTO.fromEntity(compraSalva));
     }
+
     @GetMapping("/usuario")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
-
-        return ResponseEntity.ok(compras);
+        if (usuarioLogado == null) {
+            // Se cair aqui, o Token foi aceito, mas o Spring não achou o usuário no contexto
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(compraService.listarPorUsuario(usuarioLogado.getId()));
     }
+
 
     @GetMapping("/dto")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasComprasDTO() {
