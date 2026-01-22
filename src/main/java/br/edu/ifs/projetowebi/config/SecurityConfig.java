@@ -29,13 +29,18 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors(Customizer.withDefaults()) // Ativa o CORS com as configurações do Bean
+                .cors(Customizer.withDefaults()) // Processa o CORSBean definido abaixo
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll() // Público
-                        .anyRequest().authenticated() // Tudo o mais exige o token válido
+                        // LIBERAÇÃO TOTAL PARA O MÓDULO DE AUTENTICAÇÃO
+                        .requestMatchers("/auth/**").permitAll()
+                        // Garante que o registro e login específicos funcionem sem token
+                        .requestMatchers("/auth/login", "/auth/registrar").permitAll()
+                        // Todas as outras (compras, cartões) EXIGEM o token da Geizielle
+                        .anyRequest().authenticated()
                 )
+                // O filtro JWT deve ser o primeiro para validar o usuário logado
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -46,7 +51,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        // Permitimos "*" nos headers para evitar que o Axios seja bloqueado por headers extras
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -37,11 +37,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     private String recuperarToken(HttpServletRequest request) {
-        String authHeader= request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        String authHeader = request.getHeader("Authorization");
+
+        // Verifica se o header existe e começa corretamente com "Bearer "
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
         }
 
+        // substring(7) remove exatamente "Bearer " (7 caracteres incluindo o espaço)
+        // .trim() remove qualquer espaço acidental que reste
         return authHeader.substring(7).trim();
     }
 }
