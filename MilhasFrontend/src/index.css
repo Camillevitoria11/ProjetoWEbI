@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Prosto';
+  /* Certifique-se que o caminho src/fonts/Prosto.ttf existe */
+  src: url('./fonts/Prosto.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: #020617; 
+  --foreground: #f8fafc;
+}
+
+@theme {
+  /* Adicionando a cor roxa exata do seu projeto */
+  --color-brand-purple: #6165D7;
+  --color-brand-dark: #020617;
+  --font-prosto: "Prosto", sans-serif;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  margin: 0;
+  /* Fonte tradicional para o corpo do sistema */
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+}
