@@ -3,15 +3,17 @@ package br.edu.ifs.projetowebi.controller;
 import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.model.StatusCreditModel;
+import br.edu.ifs.projetowebi.model.UsuarioModel;
 import br.edu.ifs.projetowebi.service.compra.CompraService;
 import br.edu.ifs.projetowebi.service.compra.dto.CompraEntradaDTO;
 import br.edu.ifs.projetowebi.service.compra.dto.CompraSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile; // Importante para o upload [cite: 43]
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -21,30 +23,22 @@ public class CompraController {
 
     private final CompraService compraService;
 
-
-
-    @PostMapping("/registrar")
+    @PostMapping(value = "/registrar", consumes = {"multipart/form-data"})
     public ResponseEntity<CompraSaidaDTO> registrarCompra(
-            @RequestBody CompraEntradaDTO dto) {
+            @RequestPart("dados") CompraEntradaDTO dto,
+            @RequestPart("comprovante") MultipartFile arquivo) {
 
-        CompraModel compra = new CompraModel();
-        compra.setDescricao(dto.getDescricao());
-        compra.setValor(dto.getValor());
+        // O Service agora processa o cálculo automático e o armazenamento do arquivo
+        CompraModel compraSalva = compraService.processarNovaCompra(dto, arquivo);
 
-        CartaoModel cartao = new CartaoModel();
-        cartao.setId(dto.getCartaoId());
-        compra.setCartao(cartao);
-
-        CompraModel compraSalva = compraService.registrarCompra(compra);
-
-        return ResponseEntity.ok(CompraSaidaDTO.fromEntity(compraSalva));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CompraSaidaDTO.fromEntity(compraSalva));
     }
-
-
-    @GetMapping
-    public ResponseEntity<List<CompraModel>> listarTodasCompras() {
-        return ResponseEntity.ok(compraService.listarTodas());
-    }
+//    @GetMapping("/usuario")
+//    public ResponseEntity<List<CompraModel>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+//        // Em vez de listarTodas(), usamos o ID do usuário que vem do Token JWT
+//        return ResponseEntity.ok(compraService.listarPorUsuario(usuarioLogado.getId()));
+//    }
 
     @GetMapping("/dto")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasComprasDTO() {
@@ -56,15 +50,16 @@ public class CompraController {
         return ResponseEntity.ok(compraService.buscarPorId(id));
     }
 
-    @GetMapping("/cartao/{cartaoId}")
-    public ResponseEntity<List<CompraModel>> listarComprasPorCartao(@PathVariable Long cartaoId) {
-        return ResponseEntity.ok(compraService.listarPorCartao(cartaoId));
+
+    @GetMapping("/usuario")
+    public ResponseEntity<List<CompraSaidaDTO>> listarComprasDoUsuarioLogado(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+        // O service retorna List<CompraSaidaDTO>
+        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
+
+        // Agora o retorno do ResponseEntity bate com a assinatura do metodo
+        return ResponseEntity.ok(compras);
     }
 
-    @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<CompraModel>> listarComprasPorUsuario(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(compraService.listarPorUsuario(usuarioId));
-    }
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<CompraModel>> listarComprasPorStatus(@PathVariable String status) {
@@ -72,27 +67,15 @@ public class CompraController {
         return ResponseEntity.ok(compraService.listarPorStatus(statusEnum));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<CompraSaidaDTO> atualizarCompra(
-            @PathVariable Long id,
-            @RequestBody CompraModel compraAtualizada) {
-        return ResponseEntity.ok(compraService.atualizarCompra(id, compraAtualizada));
-    }
-
     @PostMapping("/{id}/creditar-manualmente")
     public ResponseEntity<CompraModel> creditarPontosManualmente(@PathVariable Long id) {
         return ResponseEntity.ok(compraService.creditarPontosManualmente(id));
     }
 
-    @GetMapping("/cartao/{cartaoId}/total")
-    public ResponseEntity<BigDecimal> calcularTotalComprasCartao(@PathVariable Long cartaoId) {
-        BigDecimal total = compraService.calcularTotalComprasPorCartao(cartaoId);
-        return ResponseEntity.ok(total);
-    }
-
-    @GetMapping("/usuario/{usuarioId}/total-pontos")
-    public ResponseEntity<Integer> calcularTotalPontosUsuario(@PathVariable Long usuarioId) {
-        Integer totalPontos = compraService.calcularTotalPontosPorUsuario(usuarioId);
+    @GetMapping("/total-pontos")
+    public ResponseEntity<Integer> calcularTotalPontosUsuario(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+        // Agora o cálculo é feito apenas para o dono da conta logada
+        Integer totalPontos = compraService.calcularTotalPontosPorUsuario(usuarioLogado.getId());
         return ResponseEntity.ok(totalPontos);
     }
 

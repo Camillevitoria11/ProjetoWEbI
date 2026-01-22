@@ -1,18 +1,15 @@
 package br.edu.ifs.projetowebi.service.compra.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
-@Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class CompraEntradaDTO {
     private String descricao;
     private BigDecimal valor;
-    private Long cartaoId;  // Apenas o ID do cartão
+    private Long cartaoId;
+    private Long programaUsuarioId; // ID do ProgramaDoUsuárioModel
 }

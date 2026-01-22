@@ -3,6 +3,8 @@ package br.edu.ifs.projetowebi.repository;
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.model.StatusCreditModel;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -12,4 +14,8 @@ public interface CompraRepository extends JpaRepository<CompraModel, Long> {
     List<CompraModel> findByCartaoId(Long cartaoId);
     List<CompraModel> findByCartaoUsuarioId(Long usuarioId);
     List<CompraModel> findByStatusCredito(StatusCreditModel status);
+
+    @Query("SELECT c FROM CompraModel c WHERE c.usuario.id = :usuarioId")
+    List<CompraModel> findByUsuarioId(@Param("usuarioId") Long usuarioId);
+
 }

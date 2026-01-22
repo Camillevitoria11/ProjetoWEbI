@@ -1,6 +1,7 @@
 package br.edu.ifs.projetowebi.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -21,6 +22,11 @@ public class CompraModel {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal valor;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "usuario_id")
+    @JsonIgnoreProperties({"compras", "senhaHash", "email"}) // Evita recursão e não vaza a senha
+    private UsuarioModel usuario;
+
     @Column(nullable = false)
     private Integer pontosCalculados = 0;
 
@@ -37,7 +43,7 @@ public class CompraModel {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cartao_id", nullable = false)
-    @JsonIgnore
+    @JsonIgnoreProperties("compras") // Não tenta carregar as compras do cartão
     private CartaoModel cartao;
 
     // Metodo para calcular data de crédito baseado no programa
@@ -57,8 +63,7 @@ public class CompraModel {
     public void calcularPontos() {
         if (this.cartao != null && this.cartao.getMultiplicadorPontos() != null && this.valor != null) {
             BigDecimal multiplicador = this.cartao.getMultiplicadorPontos();
-            BigDecimal pontos = this.valor.multiply(multiplicador);
-            this.pontosCalculados = pontos.intValue();
+            this.pontosCalculados = this.valor.multiply(multiplicador).intValue();
         }
     }
 

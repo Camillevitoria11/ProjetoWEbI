@@ -40,6 +40,17 @@ public class AuthController {
         return ResponseEntity.ok("Usuário registrado com sucesso!");
     }
 
+//    @PostMapping("/login")
+//    public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
+//        UsernamePasswordAuthenticationToken authToken =
+//                new UsernamePasswordAuthenticationToken(loginDTO.getEmail(), loginDTO.getSenha());
+//
+//        Authentication auth = authManager.authenticate(authToken);
+//        String token = tokenService.gerarToken(auth);
+//
+//        return ResponseEntity.ok(new TokenDTO(token, "Bearer"));
+//    }
+
     @PostMapping("/login")
     public ResponseEntity<TokenDTO> login(@Valid @RequestBody LoginDTO loginDTO) {
         UsernamePasswordAuthenticationToken authToken =
@@ -48,6 +59,10 @@ public class AuthController {
         Authentication auth = authManager.authenticate(authToken);
         String token = tokenService.gerarToken(auth);
 
-        return ResponseEntity.ok(new TokenDTO(token, "Bearer"));
+        // Busque o usuário no banco para pegar o nome real
+        UsuarioModel usuario = (UsuarioModel) auth.getPrincipal();
+
+        // Retorne o token E o nome
+        return ResponseEntity.ok(new TokenDTO(token, "Bearer", usuario.getNome()));
     }
 }

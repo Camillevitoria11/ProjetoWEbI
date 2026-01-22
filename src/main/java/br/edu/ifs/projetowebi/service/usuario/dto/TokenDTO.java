@@ -10,4 +10,5 @@ import lombok.Setter;
 public class TokenDTO {
     private String token;
     private String tipo = "Bearer";
+    private String nome;
 }

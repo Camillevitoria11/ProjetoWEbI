@@ -26,36 +26,25 @@ public class CompraSaidaDTO {
     private String nomeUsuario;
 
     // Construtor para os métodos existentes no service
-    public CompraSaidaDTO(Long id, BigDecimal valor, Integer pontosCalculados,
-                          LocalDateTime dataCompra, LocalDateTime dataCredito,
-                          String statusCredito, String descricao, String comprovanteUrl) {
-        this.id = id;
-        this.valor = valor;
-        this.pontosCalculados = pontosCalculados;
-        this.dataCompra = dataCompra;
-        this.dataCredito = dataCredito;
-        this.statusCredito = statusCredito;
-        this.descricao = descricao;
-        this.comprovanteUrl = comprovanteUrl;
-    }
-
-    // Metodo para converter da entidade com todos os dados
     public static CompraSaidaDTO fromEntity(CompraModel compra) {
-        CompraSaidaDTO dto = new CompraSaidaDTO(
-                compra.getId(),
-                compra.getValor(),
-                compra.getPontosCalculados(),
-                compra.getDataCompra(),
-                compra.getDataCredito(),
-                compra.getStatusCredito().name(),
-                compra.getDescricao(),
-                compra.getComprovanteUrl()
-        );
+        CompraSaidaDTO dto = new CompraSaidaDTO();
+        dto.setId(compra.getId());
+        dto.setValor(compra.getValor());
+        dto.setPontosCalculados(compra.getPontosCalculados());
+        dto.setDataCompra(compra.getDataCompra());
+        dto.setDataCredito(compra.getDataCredito());
+        dto.setStatusCredito(compra.getStatusCredito().name());
+        dto.setDescricao(compra.getDescricao());
+        dto.setComprovanteUrl(compra.getComprovanteUrl());
 
         if (compra.getCartao() != null) {
+            // Use o nome exato que está na CartaoModel
             dto.setNomeCartao(compra.getCartao().getNomeCartao());
-            if (compra.getCartao().getUsuario() != null) {
-                dto.setNomeUsuario(compra.getCartao().getUsuario().getNome());
+
+            // Caminho: Compra -> Cartão -> Programa -> Usuário
+            if (compra.getCartao().getProgramaPontos() != null &&
+                    compra.getCartao().getProgramaPontos().getUsuario() != null) {
+                dto.setNomeUsuario(compra.getCartao().getProgramaPontos().getUsuario().getNome());
             }
         }
 
