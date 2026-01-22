@@ -34,11 +34,12 @@ public class CompraController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CompraSaidaDTO.fromEntity(compraSalva));
     }
-//    @GetMapping("/usuario")
-//    public ResponseEntity<List<CompraModel>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
-//        // Em vez de listarTodas(), usamos o ID do usuário que vem do Token JWT
-//        return ResponseEntity.ok(compraService.listarPorUsuario(usuarioLogado.getId()));
-//    }
+    @GetMapping("/usuario")
+    public ResponseEntity<List<CompraSaidaDTO>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
+
+        return ResponseEntity.ok(compras);
+    }
 
     @GetMapping("/dto")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasComprasDTO() {
@@ -51,14 +52,14 @@ public class CompraController {
     }
 
 
-    @GetMapping("/usuario")
-    public ResponseEntity<List<CompraSaidaDTO>> listarComprasDoUsuarioLogado(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
-        // O service retorna List<CompraSaidaDTO>
-        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
-
-        // Agora o retorno do ResponseEntity bate com a assinatura do metodo
-        return ResponseEntity.ok(compras);
-    }
+//    @GetMapping("/usuario")
+//    public ResponseEntity<List<CompraSaidaDTO>> listarComprasDoUsuarioLogado(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
+//        // O service retorna List<CompraSaidaDTO>
+//        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
+//
+//        // Agora o retorno do ResponseEntity bate com a assinatura do metodo
+//        return ResponseEntity.ok(compras);
+//    }
 
 
     @GetMapping("/status/{status}")
