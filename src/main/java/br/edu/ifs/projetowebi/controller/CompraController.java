@@ -7,6 +7,7 @@ import br.edu.ifs.projetowebi.model.UsuarioModel;
 import br.edu.ifs.projetowebi.service.compra.CompraService;
 import br.edu.ifs.projetowebi.service.compra.dto.CompraEntradaDTO;
 import br.edu.ifs.projetowebi.service.compra.dto.CompraSaidaDTO;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +26,7 @@ public class CompraController {
 
     @PostMapping(value = "/registrar", consumes = {"multipart/form-data"})
     public ResponseEntity<CompraSaidaDTO> registrarCompra(
-            @RequestPart("dados") CompraEntradaDTO dto,
+            @RequestPart("dados") @Valid CompraEntradaDTO dto,
             @RequestPart("comprovante") MultipartFile arquivo,
             @AuthenticationPrincipal UsuarioModel usuarioLogado) { // Adicione o usuário aqui
 
