@@ -4,6 +4,7 @@ import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
 import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.model.CompraModel;
 import br.edu.ifs.projetowebi.model.StatusCreditModel;
+import br.edu.ifs.projetowebi.model.UsuarioModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
 import br.edu.ifs.projetowebi.repository.CompraRepository;
 import br.edu.ifs.projetowebi.repository.ProgramaDoUsuarioRepository;
@@ -39,12 +40,13 @@ public class CompraService {
      * Atende aos requisitos de cálculo automático e suporte a arquivos. [cite: 21, 43]
      */
     @Transactional
-    public CompraModel processarNovaCompra(CompraEntradaDTO dto, MultipartFile arquivo) {
+    public CompraModel processarNovaCompra(CompraEntradaDTO dto, MultipartFile arquivo, UsuarioModel usuarioLogado) {
         // 1. Busca o cartão para obter o multiplicador de pontos [cite: 22]
         CartaoModel cartao = cartaoRepository.findById(dto.getCartaoId())
                 .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado"));
 
         CompraModel compra = new CompraModel();
+        compra.setUsuario(usuarioLogado);
         compra.setDescricao(dto.getDescricao());
         compra.setValor(dto.getValor());
         compra.setCartao(cartao);

@@ -26,10 +26,11 @@ public class CompraController {
     @PostMapping(value = "/registrar", consumes = {"multipart/form-data"})
     public ResponseEntity<CompraSaidaDTO> registrarCompra(
             @RequestPart("dados") CompraEntradaDTO dto,
-            @RequestPart("comprovante") MultipartFile arquivo) {
+            @RequestPart("comprovante") MultipartFile arquivo,
+            @AuthenticationPrincipal UsuarioModel usuarioLogado) { // Adicione o usuário aqui
 
-        // O Service agora processa o cálculo automático e o armazenamento do arquivo
-        CompraModel compraSalva = compraService.processarNovaCompra(dto, arquivo);
+        // Passe o usuarioLogado para o Service vincular a compra ao ID correto
+        CompraModel compraSalva = compraService.processarNovaCompra(dto, arquivo, usuarioLogado);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CompraSaidaDTO.fromEntity(compraSalva));
