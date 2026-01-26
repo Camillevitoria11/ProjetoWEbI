@@ -42,9 +42,9 @@ public class CompraSaidaDTO {
             dto.setNomeCartao(compra.getCartao().getNomeCartao());
 
             // Caminho: Compra -> Cartão -> Programa -> Usuário
-            if (compra.getCartao().getProgramaPontos() != null &&
-                    compra.getCartao().getProgramaPontos().getUsuario() != null) {
-                dto.setNomeUsuario(compra.getCartao().getProgramaPontos().getUsuario().getNome());
+            if (compra.getCartao().getProgramaDoUsuario() != null &&
+                    compra.getCartao().getProgramaDoUsuario().getUsuario() != null) {
+                dto.setNomeUsuario(compra.getCartao().getProgramaDoUsuario().getUsuario().getNome());
             }
         }
 

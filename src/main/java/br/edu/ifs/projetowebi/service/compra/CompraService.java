@@ -98,7 +98,7 @@ public class CompraService {
     @Transactional
     protected void creditarPontosDaCompra(CompraModel compra) {
         if (compra.creditarPontos()) {
-            programaDoUsuarioRepository.save(compra.getCartao().getProgramaPontos());
+            programaDoUsuarioRepository.save(compra.getCartao().getProgramaDoUsuario());
             compraRepository.save(compra);
         }
     }
@@ -157,7 +157,7 @@ public class CompraService {
     public CompraModel creditarPontosManualmente(Long compraId) {
         CompraModel compra = buscarPorId(compraId);
         if (compra.creditarPontos()) {
-            programaDoUsuarioRepository.save(compra.getCartao().getProgramaPontos());
+            programaDoUsuarioRepository.save(compra.getCartao().getProgramaDoUsuario());
             return compraRepository.save(compra);
         }
         throw new RuntimeException("Não foi possível creditar pontos");
@@ -196,9 +196,9 @@ public class CompraService {
         if (compra.getCartao() != null) {
             dto.setNomeCartao(compra.getCartao().getNomeCartao());
 
-            if (compra.getCartao().getProgramaPontos() != null &&
-                    compra.getCartao().getProgramaPontos().getUsuario() != null) {
-                dto.setNomeUsuario(compra.getCartao().getProgramaPontos().getUsuario().getNome());
+            if (compra.getCartao().getProgramaDoUsuario() != null &&
+                    compra.getCartao().getProgramaDoUsuario().getUsuario() != null) {
+                dto.setNomeUsuario(compra.getCartao().getProgramaDoUsuario().getUsuario().getNome());
             }
         }
 

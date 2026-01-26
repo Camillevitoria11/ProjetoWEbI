@@ -1,21 +1,13 @@
 package br.edu.ifs.projetowebi.service.cartao.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-public class CartaoSaidaDTO {
-    private Long idCartao;
-    private String nomeCartao;
-    private BigDecimal multiplicadorPontos;
-    private String bandeira;
-    private String nomeUsuario;
-    private String nomePrograma;
-    private Integer saldoPrograma;
-}
+public record CartaoSaidaDTO(
+        Long id,
+        String nomeCartao,
+        BigDecimal multiplicadorPontos,
+        String bandeira,
+        String nomeUsuario,
+        String nomePrograma,
+        Integer saldoPontos
+) {}

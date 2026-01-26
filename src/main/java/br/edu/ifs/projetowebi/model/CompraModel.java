@@ -1,6 +1,5 @@
 package br.edu.ifs.projetowebi.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
@@ -49,10 +48,10 @@ public class CompraModel {
     // Metodo para calcular data de crédito baseado no programa
     public void calcularDataCredito() {
         if (this.cartao != null &&
-                this.cartao.getProgramaPontos() != null &&
-                this.cartao.getProgramaPontos().getProgramaCatalogo() != null) {
+                this.cartao.getProgramaDoUsuario() != null &&
+                this.cartao.getProgramaDoUsuario().getProgramaCatalogo() != null) {
 
-            Integer prazoDias = this.cartao.getProgramaPontos().getProgramaCatalogo().getPrazoCreditoDias();
+            Integer prazoDias = this.cartao.getProgramaDoUsuario().getProgramaCatalogo().getPrazoCreditoDias();
             if (prazoDias != null) {
                 this.dataCredito = this.dataCompra.plusDays(prazoDias);
             }
@@ -81,9 +80,9 @@ public class CompraModel {
     public boolean creditarPontos() {
         if (this.statusCredito == StatusCreditModel.PENDENTE &&
                 this.cartao != null &&
-                this.cartao.getProgramaPontos() != null) {
+                this.cartao.getProgramaDoUsuario() != null) {
 
-            ProgramaDoUsuarioModel programa = this.cartao.getProgramaPontos();
+            ProgramaDoUsuarioModel programa = this.cartao.getProgramaDoUsuario();
             Integer saldoAtual = programa.getSaldoPontos() != null ? programa.getSaldoPontos() : 0;
             programa.setSaldoPontos(saldoAtual + this.pontosCalculados);
             this.statusCredito = StatusCreditModel.CREDITADO;

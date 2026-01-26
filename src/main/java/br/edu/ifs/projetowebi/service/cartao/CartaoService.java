@@ -2,11 +2,12 @@ package br.edu.ifs.projetowebi.service.cartao;
 
 import br.edu.ifs.projetowebi.config.excecoes.NaoEncontradoException;
 import br.edu.ifs.projetowebi.model.CartaoModel;
+import br.edu.ifs.projetowebi.model.CatalogoCartaoModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
+import br.edu.ifs.projetowebi.repository.CatalogoCartaoRepository;
 import br.edu.ifs.projetowebi.service.cartao.dto.CartaoSaidaDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -15,16 +16,26 @@ import java.util.List;
 public class CartaoService {
 
     private final CartaoRepository cartaoRepository;
+    private final CatalogoCartaoRepository catalogoCartaoRepository;
+
+    public CatalogoCartaoModel identificarPeloNumero(String numero) {
+        if (numero == null || numero.length() < 6) {
+            throw new IllegalArgumentException("Número de cartão inválido ou incompleto");
+        }
+
+        String bin = numero.substring(0, 6);
+
+        // Busca no catálogo mestre. Se não achar, retornar um erro
+        // ou um objeto padrão de "Cartão Desconhecido"
+        return catalogoCartaoRepository.findByBin(bin)
+                .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado no catálogo global"));
+    }
 
     public CartaoModel salvar(CartaoModel cartao) {
         if (cartao.getMultiplicadorPontos() == null) {
             cartao.setMultiplicadorPontos(BigDecimal.valueOf(1.0));
         }
         return cartaoRepository.save(cartao);
-    }
-
-    public List<CartaoModel> listarTodos() {
-        return cartaoRepository.findAll();
     }
 
     public List<CartaoModel> listarPorUsuario(Long usuarioId) {
@@ -63,12 +74,12 @@ public class CartaoService {
                         cartao.getId(),
                         cartao.getNomeCartao(),
                         cartao.getMultiplicadorPontos(),
-                        cartao.getBandeira() != null ? cartao.getBandeira().name() : null,
-                        cartao.getUsuario() != null ? cartao.getUsuario().getNome() : null,
-                        cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getNome() : null,
-                        cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getSaldoPontos() : 0
-                ))
-                .toList();
+                        cartao.getBandeira() != null ? cartao.getBandeira() : "Não identificada",
+                        cartao.getUsuario() != null ? cartao.getUsuario().getNome() : "Sem Usuário",
+                        cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getNome() : "Sem Programa",
+                        // ADICIONADO: O 7º argumento (Saldo de Pontos)
+                        cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getSaldoPontos() : 0
+                )).toList();
     }
 
     public CartaoSaidaDTO buscarDetalhesPorId(Long id) {
@@ -79,10 +90,10 @@ public class CartaoService {
                 cartao.getId(),
                 cartao.getNomeCartao(),
                 cartao.getMultiplicadorPontos(),
-                cartao.getBandeira() != null ? cartao.getBandeira().name() : null,
+                cartao.getBandeira() != null ? cartao.getBandeira() : null,
                 cartao.getUsuario() != null ? cartao.getUsuario().getNome() : null,
-                cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getNome() : null,
-                cartao.getProgramaPontos() != null ? cartao.getProgramaPontos().getSaldoPontos() : 0
+                cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getNome() : null,
+                cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getSaldoPontos() : 0
         );
     }
 }

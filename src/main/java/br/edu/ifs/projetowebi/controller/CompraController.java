@@ -58,16 +58,6 @@ public class CompraController {
     }
 
 
-//    @GetMapping("/usuario")
-//    public ResponseEntity<List<CompraSaidaDTO>> listarComprasDoUsuarioLogado(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
-//        // O service retorna List<CompraSaidaDTO>
-//        List<CompraSaidaDTO> compras = compraService.listarPorUsuario(usuarioLogado.getId());
-//
-//        // Agora o retorno do ResponseEntity bate com a assinatura do metodo
-//        return ResponseEntity.ok(compras);
-//    }
-
-
     @GetMapping("/status/{status}")
     public ResponseEntity<List<CompraModel>> listarComprasPorStatus(@PathVariable String status) {
         StatusCreditModel statusEnum = StatusCreditModel.valueOf(status.toUpperCase());
