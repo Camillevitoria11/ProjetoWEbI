@@ -11,5 +11,6 @@ public class CompraEntradaDTO {
     private String descricao;
     private BigDecimal valor;
     private Long cartaoId;
+    private Long UsuarioId;
     private Long programaUsuarioId; // ID do ProgramaDoUsuárioModel
 }

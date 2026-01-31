@@ -58,11 +58,6 @@ public class CartaoController {
         return ResponseEntity.ok(repository.save(cartao));
     }
 
-    // Listar todos os cartões
-    @GetMapping
-    public ResponseEntity<List<CartaoSaidaDTO>> listarTodos() {
-        return ResponseEntity.ok(cartaoService.listarTodosDTO());
-    }
 
     @GetMapping("/detalhes/{id}")
     public ResponseEntity<CartaoSaidaDTO> buscarDetalhes(@PathVariable Long id) {

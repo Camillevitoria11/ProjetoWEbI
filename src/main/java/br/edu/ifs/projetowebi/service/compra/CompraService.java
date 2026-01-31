@@ -37,11 +37,11 @@ public class CompraService {
 
     /**
      * Processa uma nova compra vinda do Frontend com arquivo anexo.
-     * Atende aos requisitos de cálculo automático e suporte a arquivos. [cite: 21, 43]
+     * Atende aos requisitos de cálculo automático e suporte a arquivos.
      */
     @Transactional
     public CompraModel processarNovaCompra(CompraEntradaDTO dto, MultipartFile arquivo, UsuarioModel usuarioLogado) {
-        // 1. Busca o cartão para obter o multiplicador de pontos [cite: 22]
+        // 1. Busca o cartão para obter o multiplicador de pontos
         CartaoModel cartao = cartaoRepository.findById(dto.getCartaoId())
                 .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado"));
 
@@ -58,20 +58,6 @@ public class CompraService {
             compra.setPontosCalculados(pontos.intValue());
         } else {
             compra.setPontosCalculados(dto.getValor().intValue()); // Padrão 1:1 caso nulo
-        }
-
-        // 3. Upload de Arquivo (PNG, JPG, PDF) [cite: 43]
-        if (arquivo != null && !arquivo.isEmpty()) {
-            try {
-                String nomeArquivo = UUID.randomUUID().toString() + "_" + arquivo.getOriginalFilename();
-                Path caminho = Paths.get(uploadDir + nomeArquivo);
-                Files.createDirectories(caminho.getParent());
-                Files.write(caminho, arquivo.getBytes());
-
-                compra.setComprovanteUrl(caminho.toString());
-            } catch (IOException e) {
-                throw new RuntimeException("Falha ao salvar o comprovante", e);
-            }
         }
 
         return compraRepository.save(compra);
