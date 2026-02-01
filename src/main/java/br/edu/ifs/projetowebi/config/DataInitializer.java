@@ -25,11 +25,11 @@ public class DataInitializer {
         // Inicializa Programas
         if (programaCatalogoRepository.count() == 0) {
             List<ProgramaCatalogoModel> programas = Arrays.asList(
-                    createPrograma("Smiles", "Programa de pontos da Gol", 1.2, 30),
-                    createPrograma("Azul", "Programa de pontos da Azul", 1.1, 45),
-                    createPrograma("Latam Pass", "Programa de pontos da Latam", 1.3, 35),
-                    createPrograma("Livelo", "Bradesco e Banco do Brasil", 1.0, 30),
-                    createPrograma("Esfera", "Santander", 1.0, 30)
+                    createPrograma("Smiles", "Programa de pontos da Gol", 1.2, 1),
+                    createPrograma("Azul", "Programa de pontos da Azul", 1.1, 1),
+                    createPrograma("Latam Pass", "Programa de pontos da Latam", 1.3, 1),
+                    createPrograma("Livelo", "Bradesco e Banco do Brasil", 1.0, 1),
+                    createPrograma("Esfera", "Santander", 1.0, 1)
             );
             programaCatalogoRepository.saveAll(programas);
         }

@@ -5,6 +5,7 @@ import { Registro } from './pages/Registro';
 import { Dashboard } from './pages/Dashboard';
 import { RegistrarCompra } from './pages/RegistrarCompra';
 import { MeusCartoes } from './pages/MeusCartoes';
+import { MeusProgramas } from './pages/ProgramasDePontos';
 
 interface RouteProps {
   children: React.ReactNode;
@@ -77,6 +78,15 @@ export default function App() {
           element={
             <PrivateRoute>
               <MeusCartoes />
+            </PrivateRoute>
+          }
+        />
+
+        <Route
+          path="/meus-programas"
+          element={
+            <PrivateRoute>
+              <MeusProgramas />
             </PrivateRoute>
           }
         />

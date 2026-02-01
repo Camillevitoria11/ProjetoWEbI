@@ -1,7 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom'; // Adicionado Link aqui
 import { useState, useEffect, useCallback } from 'react';
 import {
-    Wallet, Plus, Plane,LogOut, FileText, BarChart3, Loader2, AlertCircle
+    Wallet, Plus, Plane,LogOut, FileText, BarChart3, Loader2, AlertCircle, Gift
 } from 'lucide-react';
 import api from '../services/api';
 import axios from 'axios';
@@ -86,9 +86,13 @@ export function Dashboard() {
                         <BarChart3 size={20} className="text-indigo-400" /> Visão Geral
                     </button>
                     
-                    <button className="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-white/5 w-full p-3 rounded-xl transition-all text-left">
-                        <Plane size={20} /> Programas
-                    </button>
+                    <Link
+                        to="/meus-programas"
+                        className="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-white/5 w-full p-3 rounded-xl transition-all"
+                    >
+                        <Gift size={20} /> {/* Ícone de presente para programas */}
+                        <span>Programas</span>
+                    </Link>
 
                     {/* Botão Meus Cartões como Link */}
                     <Link

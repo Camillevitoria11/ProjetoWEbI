@@ -13,5 +13,4 @@ public class ProgramaDePontosSaidaDTO {
     private Long id;
     private String nome;
     private Integer saldoPontos;
-    //private UsuarioSaidaDTO usuario; // DTO aninhado
 }

@@ -7,9 +7,8 @@ import lombok.Data;
 @Entity
 @Table(name = "programas_catalogo")
 public class ProgramaCatalogoModel {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(nullable = false, unique = true)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -21,5 +20,5 @@ public class ProgramaCatalogoModel {
     private Double multiplicadorBase = 1.0;
 
     @Column(name = "prazo_credito_dias")
-    private Integer prazoCreditoDias = 30;
+    private Integer prazoCreditoDias = 1;
 }
