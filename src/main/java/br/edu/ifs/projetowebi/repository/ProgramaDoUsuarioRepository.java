@@ -22,4 +22,6 @@ public interface ProgramaDoUsuarioRepository extends JpaRepository<ProgramaDoUsu
     default boolean existsByUsuarioIdAndProgramaCatalogoId(Long usuarioId, Long programaCatalogoProgramaId) {
         return findByUsuarioAndProgramaCatalogo(usuarioId, programaCatalogoProgramaId).isPresent();
     }
+
+    Optional<ProgramaDoUsuarioModel> findByUsuarioIdAndProgramaCatalogoId(Long id, Long id1);
 }

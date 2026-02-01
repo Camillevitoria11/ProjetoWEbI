@@ -2,6 +2,9 @@ package br.edu.ifs.projetowebi.controller;
 
 import br.edu.ifs.projetowebi.model.CartaoModel;
 import br.edu.ifs.projetowebi.model.CatalogoCartaoModel;
+import br.edu.ifs.projetowebi.model.ProgramaCatalogoModel;
+import br.edu.ifs.projetowebi.model.ProgramaDoUsuarioModel;
+import br.edu.ifs.projetowebi.model.UsuarioModel;
 import br.edu.ifs.projetowebi.repository.CartaoRepository;
 import br.edu.ifs.projetowebi.repository.ProgramaCatalogoRepository;
 import br.edu.ifs.projetowebi.repository.ProgramaDoUsuarioRepository;
@@ -11,7 +14,10 @@ import br.edu.ifs.projetowebi.service.cartao.dto.CartaoSaidaDTO;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,30 +42,69 @@ public class CartaoController {
     @Autowired
     private ProgramaDoUsuarioRepository programaDoUsuarioRepository;
 
-    @PostMapping
-    public ResponseEntity<CartaoModel> salvar(@RequestBody CartaoSaidaDTO dto) {
-        CartaoModel cartao = new CartaoModel();
-        cartao.setNomeCartao(dto.nomeCartao());
-        cartao.setMultiplicadorPontos(dto.multiplicadorPontos());
-        cartao.setBandeira(dto.bandeira());
+    private UsuarioModel getUsuarioAutenticado() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        // Vincula o Usuário (Fixo em 1L conforme seu padrão)
-        usuarioRepository.findById(1L).ifPresent(cartao::setUsuario);
-
-        // Lógica Dinâmica:
-        // 1. Se o DTO trouxer um ID de programa, usamos ele (Recomendado)
-        // 2. Senão, tenta encontrar pelo nome do banco/cartão
-        if (dto.programaId() != null) {
-            programaDoUsuarioRepository.findById(dto.programaId()).ifPresent(cartao::setProgramaDoUsuario);
-        } else {
-            String termoBusca = dto.nomeCartao().split(" ")[0].toLowerCase();
-            programaDoUsuarioRepository.findAll().stream()
-                    .filter(p -> p.getNome().toLowerCase().contains(termoBusca))
-                    .findFirst()
-                    .ifPresent(cartao::setProgramaDoUsuario);
+        if (authentication == null || !authentication.isAuthenticated() ||
+                "anonymousUser".equals(authentication.getPrincipal())) {
+            throw new RuntimeException("Usuário não autenticado");
         }
 
-        return ResponseEntity.ok(repository.save(cartao));
+        String username = authentication.getName();
+        return usuarioRepository.findByEmail(username)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + username));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> salvar(@RequestBody CartaoSaidaDTO dto) {
+        try {
+            UsuarioModel usuario = getUsuarioAutenticado();
+
+            CartaoModel cartao = new CartaoModel();
+            cartao.setNomeCartao(dto.nomeCartao());
+            cartao.setMultiplicadorPontos(dto.multiplicadorPontos());
+            cartao.setBandeira(dto.bandeira());
+            cartao.setUsuario(usuario);
+
+            // Associa ProgramaDoUsuario se tiver programaId
+            if (dto.programaId() != null) {
+                ProgramaCatalogoModel programaCatalogo = programaCatalogoRepository.findById(dto.programaId())
+                        .orElseThrow(() -> new RuntimeException("Programa não encontrado"));
+
+                // Busca ou cria ProgramaDoUsuario
+                ProgramaDoUsuarioModel programaDoUsuario = programaDoUsuarioRepository
+                        .findByUsuarioIdAndProgramaCatalogoId(usuario.getId(), programaCatalogo.getId())
+                        .orElseGet(() -> {
+                            ProgramaDoUsuarioModel novo = new ProgramaDoUsuarioModel();
+                            novo.setNome(programaCatalogo.getNome());
+                            novo.setUsuario(usuario);
+                            novo.setProgramaCatalogo(programaCatalogo);
+                            novo.setSaldoPontos(0);
+                            return programaDoUsuarioRepository.save(novo);
+                        });
+
+                cartao.setProgramaDoUsuario(programaDoUsuario);
+            }
+
+            CartaoModel cartaoSalvo = repository.save(cartao);
+            return ResponseEntity.ok(cartaoSalvo);
+
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Erro de autenticação: " + e.getMessage());
+        }
+    }
+
+    @GetMapping
+    public ResponseEntity<?> listarMeusCartoes() {
+        try {
+            UsuarioModel usuario = getUsuarioAutenticado();
+            List<CartaoModel> cartoes = repository.findByUsuarioId(usuario.getId());
+            return ResponseEntity.ok(cartoes);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Erro de autenticação: " + e.getMessage());
+        }
     }
 
     @GetMapping("/detalhes/{id}")
@@ -84,19 +129,57 @@ public class CartaoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CartaoModel> atualizar(@PathVariable Long id, @RequestBody CartaoModel cartao) {
-        return ResponseEntity.ok(cartaoService.atualizar(id, cartao));
+    public ResponseEntity<?> atualizar(@PathVariable Long id, @RequestBody CartaoModel cartao) {
+        try {
+            UsuarioModel usuario = getUsuarioAutenticado();
+
+            // Verifica se o cartão pertence ao usuário
+            CartaoModel cartaoExistente = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Cartão não encontrado"));
+
+            if (!cartaoExistente.getUsuario().getId().equals(usuario.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Você não tem permissão para atualizar este cartão");
+            }
+
+            return ResponseEntity.ok(cartaoService.atualizar(id, cartao));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Erro de autenticação: " + e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
     @Transactional
-    public ResponseEntity<Void> excluir(@PathVariable Long id) {
-        repository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> excluir(@PathVariable Long id) {
+        try {
+            UsuarioModel usuario = getUsuarioAutenticado();
+
+            // Verifica se o cartão pertence ao usuário
+            CartaoModel cartao = repository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Cartão não encontrado"));
+
+            if (!cartao.getUsuario().getId().equals(usuario.getId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Você não tem permissão para excluir este cartão");
+            }
+
+            repository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Erro de autenticação: " + e.getMessage());
+        }
     }
 
     @GetMapping("/dto")
-    public ResponseEntity<List<CartaoSaidaDTO>> listarTodosDTO() {
-        return ResponseEntity.ok(cartaoService.listarTodosDTO());
+    public ResponseEntity<?> listarTodosDTO() {
+        try {
+            UsuarioModel usuario = getUsuarioAutenticado();
+            return ResponseEntity.ok(cartaoService.listarTodosDTOPorUsuario(usuario.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Erro de autenticação: " + e.getMessage());
+        }
     }
 }

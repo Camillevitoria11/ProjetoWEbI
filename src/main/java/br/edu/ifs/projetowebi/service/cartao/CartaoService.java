@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -84,6 +85,25 @@ public class CartaoService {
                             programa != null ? programa.getSaldoPontos() : 0                             // 8. Integer (Saldo por último)
                     );
                 }).toList();
+    }
+    public List<CartaoSaidaDTO> listarTodosDTOPorUsuario(Long usuarioId) {
+        List<CartaoModel> cartoes = cartaoRepository.findByUsuarioId(usuarioId);
+
+        return cartoes.stream()
+                .map(cartao -> new CartaoSaidaDTO(
+                        cartao.getId(),
+                        cartao.getNomeCartao(),
+                        cartao.getMultiplicadorPontos(),
+                        cartao.getBandeira(),
+                        cartao.getUsuario().getNome(),
+                        cartao.getProgramaDoUsuario() != null ?
+                                cartao.getProgramaDoUsuario().getProgramaCatalogo().getNome() : "Sem programa",
+                        cartao.getProgramaDoUsuario() != null ?
+                                cartao.getProgramaDoUsuario().getProgramaCatalogo().getId() : null,
+                        cartao.getProgramaDoUsuario() != null ?
+                                cartao.getProgramaDoUsuario().getSaldoPontos() : 0
+                ))
+                .collect(Collectors.toList());
     }
     public CartaoSaidaDTO buscarDetalhesPorId(Long id) {
         CartaoModel cartao = cartaoRepository.findById(id)
