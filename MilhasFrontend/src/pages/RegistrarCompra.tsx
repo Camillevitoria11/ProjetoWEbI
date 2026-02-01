@@ -62,7 +62,7 @@ export function RegistrarCompra() {
     return (
         <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex justify-center items-center">
             <div className="w-full max-w-2xl bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
-                <button
+                <button 
                     onClick={() => navigate('/dashboard')}
                     className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-colors"
                 >

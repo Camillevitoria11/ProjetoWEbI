@@ -1,10 +1,12 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Adicionado Link aqui
 import { useState, useEffect, useCallback } from 'react';
-import { Wallet, Plus, Plane, LogOut, FileText, BarChart3, Loader2 } from 'lucide-react';
+import {
+    Wallet, Plus, Plane,LogOut, FileText, BarChart3, Loader2, AlertCircle
+} from 'lucide-react';
 import api from '../services/api';
 import axios from 'axios';
 
-// Interface ajustada para bater exatamente com o seu CompraSaidaDTO do Java
+// Interface mapeada conforme CompraSaidaDTO.java
 interface Compra {
     id: number;
     descricao: string;
@@ -20,30 +22,35 @@ export function Dashboard() {
     const navigate = useNavigate();
     const [compras, setCompras] = useState<Compra[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Recuperação segura do nome do usuário
     const userName = localStorage.getItem('userName') || 'Usuário';
 
-    // 1. handleLogout com useCallback: Resolve o erro "missing dependency" do ESLint
     const handleLogout = useCallback(() => {
         localStorage.clear();
         navigate('/login');
     }, [navigate]);
 
-    // 2. Busca de dados centralizada
     const fetchDados = useCallback(async () => {
+        const token = localStorage.getItem('@App:token');
+        if (!token) {
+            handleLogout();
+            return;
+        }
+
         try {
             setLoading(true);
-            const response = await api.get('/compras');
-            // Garante que o estado sempre receba um array para evitar erro no .map()
-            setCompras(Array.isArray(response.data) ? response.data : []);
-        } catch (error: unknown) {
-            console.error("Erro ao carregar dados", error);
+            setError(null);
             
-            if (axios.isAxiosError(error)) {
-                if (error.response?.status === 401) {
-                    handleLogout();
-                }
+            // Chamada ao endpoint do Java
+            const response = await api.get('/compras/usuario');
+            setCompras(Array.isArray(response.data) ? response.data : []);
+        } catch (err: unknown) {
+            console.error("Erro na Dashboard:", err);
+            setError("Não foi possível carregar suas milhas.");
+            
+            if (axios.isAxiosError(err) && err.response?.status === 401) {
+                handleLogout();
             }
         } finally {
             setLoading(false);
@@ -54,133 +61,162 @@ export function Dashboard() {
         fetchDados();
     }, [fetchDados]);
 
-    // 3. Cálculos de Saldo (Baseados no status vindo do CompraSaidaDTO)
-    const totalPontosDisponiveis = compras
+    // Cálculos dinâmicos baseados no DTO
+    const totalDisponivel = compras
         .filter(c => c.statusCredito === 'CREDITADO')
         .reduce((acc, curr) => acc + (curr.pontosCalculados || 0), 0);
 
-    const totalPontosPendentes = compras
+    const totalPendente = compras
         .filter(c => c.statusCredito === 'PENDENTE')
         .reduce((acc, curr) => acc + (curr.pontosCalculados || 0), 0);
 
     return (
         <div className="min-h-screen bg-slate-950 text-white flex font-sans">
-            {/* Sidebar Lateral */}
-            <aside className="w-64 border-r border-slate-800 p-6 hidden md:flex flex-col">
-                <h1 className="text-2xl font-bold text-indigo-500 mb-10 tracking-tight">
-                    MultiMilhas
-                </h1>
+            {/* Sidebar */}
+            <aside className="w-64 border-r border-slate-800 p-6 hidden lg:flex flex-col bg-slate-950/50 backdrop-blur-xl">
+                <div className="flex items-center gap-3 mb-10 px-2">
+                    <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+                        <Plane size={18} className="text-white" />
+                    </div>
+                    <span className="text-xl font-bold tracking-tight">MultiMilhas</span>
+                </div>
                 
-                <nav className="space-y-4 flex-1">
-                    <button className="flex items-center gap-3 text-indigo-400 bg-indigo-500/10 w-full p-3 rounded-xl font-medium">
-                        <BarChart3 size={20} /> Visão Geral
+                <nav className="space-y-2 flex-1">
+                    <button className="flex items-center gap-3 text-white bg-indigo-600/10 border border-indigo-500/20 w-full p-3 rounded-xl font-medium transition-all text-left">
+                        <BarChart3 size={20} className="text-indigo-400" /> Visão Geral
                     </button>
-                    <button className="flex items-center gap-3 text-slate-400 hover:text-white w-full p-3 transition-colors">
+                    
+                    <button className="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-white/5 w-full p-3 rounded-xl transition-all text-left">
                         <Plane size={20} /> Programas
                     </button>
-                    <button className="flex items-center gap-3 text-slate-400 hover:text-white w-full p-3 transition-colors">
-                        <Wallet size={20} /> Meus Cartões
-                    </button>
+
+                    {/* Botão Meus Cartões como Link */}
+                    <Link
+                        to="/cartoes"
+                        className="flex items-center gap-3 text-slate-400 hover:text-white hover:bg-white/5 w-full p-3 rounded-xl transition-all"
+                    >
+                        <Wallet size={20} />
+                        <span>Meus Cartões</span>
+                    </Link>
                 </nav>
 
                 <button 
                     onClick={handleLogout}
-                    className="flex items-center gap-3 text-red-400 p-3 mt-auto hover:bg-red-500/10 rounded-xl transition-all group"
+                    className="flex items-center gap-3 text-slate-500 hover:text-red-400 p-3 mt-auto rounded-xl transition-colors group text-left"
                 >
-                    <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" /> 
-                    Sair
+                    <LogOut size={20} /> Sair da conta
                 </button>
             </aside>
 
-            {/* Conteúdo Principal */}
-            <main className="flex-1 p-8 overflow-y-auto">
-                <header className="flex justify-between items-center mb-10">
+            {/* Main Content */}
+            <main className="flex-1 p-4 md:p-8 lg:p-12 overflow-y-auto">
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-10">
                     <div>
-                        <h2 className="text-3xl font-bold">
+                        <h2 className="text-3xl font-bold tracking-tight">
                             Olá, <span className="text-indigo-500">{userName}</span>
                         </h2>
-                        <p className="text-slate-500 text-sm mt-1">Gerencie seu acúmulo de milhas.</p>
+                        <p className="text-slate-500 mt-1">Aqui está o resumo das suas milhas hoje.</p>
                     </div>
                     
-                    <button 
+                    <button
+                        type="button"
                         onClick={() => navigate('/registrar-compra')}
-                        className="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
+                        className="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
                     >
                         <Plus size={20} /> Registrar Compra
                     </button>
                 </header>
 
-                {/* Cards de Saldo */}
+                {/* Status Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl border-l-4 border-l-green-500 shadow-xl">
-                        <p className="text-slate-500 text-sm mb-1 uppercase font-semibold">Saldo Disponível</p>
-                        <h3 className="text-4xl font-bold">
-                            {totalPontosDisponiveis.toLocaleString('pt-BR')}
-                        </h3>
+                    <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />
+                        <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-2">Saldo Disponível</p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-5xl font-black">{totalDisponivel.toLocaleString('pt-BR')}</h3>
+                            <span className="text-green-500 font-medium text-sm">pontos</span>
+                        </div>
                     </div>
 
-                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl border-l-4 border-l-yellow-500 shadow-xl">
-                        <p className="text-slate-500 text-sm mb-1 uppercase font-semibold">Previsão de Crédito</p>
-                        <h3 className="text-4xl font-bold text-slate-300">
-                            {totalPontosPendentes.toLocaleString('pt-BR')}
-                        </h3>
+                    <div className="bg-slate-900/50 border border-slate-800 p-8 rounded-3xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                        <p className="text-slate-500 text-xs uppercase tracking-widest font-bold mb-2">Aguardando Crédito</p>
+                        <div className="flex items-baseline gap-2">
+                            <h3 className="text-5xl font-black text-slate-300">{totalPendente.toLocaleString('pt-BR')}</h3>
+                            <span className="text-amber-500 font-medium text-sm">pontos</span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Tabela de Compras Reais */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                {/* Transactions Table */}
+                <div className="bg-slate-900/40 border border-slate-800 rounded-3xl overflow-hidden backdrop-blur-sm">
+                    <div className="p-6 border-b border-slate-800 flex justify-between items-center">
+                        <h4 className="font-bold text-lg">Últimas Atividades</h4>
+                        {error && <span className="text-red-400 text-sm flex items-center gap-2"><AlertCircle size={14}/> {error}</span>}
+                    </div>
+                    
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-slate-950/50 text-slate-500 text-sm uppercase">
-                                <tr>
-                                    <th className="p-4 font-semibold">Descrição / Cartão</th>
-                                    <th className="p-4 font-semibold text-indigo-400">Pontos</th>
-                                    <th className="p-4 font-semibold">Status</th>
-                                    <th className="p-4 font-semibold text-center">Comprovante</th>
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-800/50">
+                                    <th className="px-6 py-4 font-bold">Descrição / Cartão</th>
+                                    <th className="px-6 py-4 font-bold">Pontos</th>
+                                    <th className="px-6 py-4 font-bold">Status</th>
+                                    <th className="px-6 py-4 font-bold text-center">Comprovante</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-800">
+                            <tbody className="divide-y divide-slate-800/50">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={4} className="p-10 text-center">
-                                            <Loader2 className="mx-auto animate-spin text-indigo-500" />
+                                        <td colSpan={4} className="py-20 text-center">
+                                            <Loader2 className="mx-auto animate-spin text-indigo-500" size={32} />
                                         </td>
                                     </tr>
                                 ) : compras.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="p-10 text-center text-slate-500">
-                                            Nenhuma compra encontrada no seu histórico.
+                                        <td colSpan={4} className="py-20 text-center">
+                                            <div className="w-12 h-12 mx-auto opacity-20 mb-4">
+                                                <BarChart3 size={48} className="mx-auto" />
+                                            </div>
+                                            <p className="text-slate-500 font-medium">Nenhum registro encontrado.</p>
                                         </td>
                                     </tr>
                                 ) : (
                                     compras.map((compra) => (
-                                        <tr key={compra.id} className="hover:bg-white/5 transition-colors">
-                                            <td className="p-4">
-                                                <div className="font-medium">{compra.descricao}</div>
-                                                <div className="text-xs text-slate-500">{compra.nomeCartao}</div>
+                                        <tr key={compra.id} className="hover:bg-white/2 transition-colors group">
+                                            <td className="px-6 py-5">
+                                                <div className="font-semibold text-slate-200">{compra.descricao}</div>
+                                                <div className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+                                                    <Wallet size={10} /> {compra.nomeCartao}
+                                                </div>
                                             </td>
-                                            <td className="p-4 font-bold text-lg">
-                                                +{compra.pontosCalculados.toLocaleString('pt-BR')}
+                                            <td className="px-6 py-5">
+                                                <span className="text-lg font-bold text-indigo-400">
+                                                    +{compra.pontosCalculados.toLocaleString('pt-BR')}
+                                                </span>
                                             </td>
-                                            <td className="p-4">
-                                                <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                                            <td className="px-6 py-5">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wider ${
                                                     compra.statusCredito === 'CREDITADO' 
-                                                        ? 'bg-green-500/10 text-green-400' 
-                                                        : 'bg-yellow-500/10 text-yellow-400'
+                                                        ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                                                        : 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
                                                 }`}>
                                                     {compra.statusCredito}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-center">
-                                                {compra.comprovanteUrl && (
+                                            <td className="px-6 py-5 text-center">
+                                                {compra.comprovanteUrl ? (
                                                     <a 
-                                                        href={`http://localhost:8080/${compra.comprovanteUrl}`} 
+                                                        href={`http://localhost:8080/uploads/${compra.comprovanteUrl}`} 
                                                         target="_blank" 
                                                         rel="noreferrer"
-                                                        className="text-slate-500 hover:text-indigo-400 transition-colors inline-block"
+                                                        className="p-2 hover:bg-indigo-500/20 rounded-lg inline-block text-slate-400 hover:text-indigo-400 transition-all"
+                                                        title="Ver Comprovante"
                                                     >
-                                                        <FileText size={20} />
+                                                        <FileText size={18} />
                                                     </a>
+                                                ) : (
+                                                    <span className="text-slate-700">-</span>
                                                 )}
                                             </td>
                                         </tr>

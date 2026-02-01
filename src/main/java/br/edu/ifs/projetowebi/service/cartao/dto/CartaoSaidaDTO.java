@@ -9,5 +9,6 @@ public record CartaoSaidaDTO(
         String bandeira,
         String nomeUsuario,
         String nomePrograma,
+        Long programaId,
         Integer saldoPontos
 ) {}

@@ -21,7 +21,6 @@ interface CatalogoResponse {
 export function MeusCartoes() {
     const navigate = useNavigate();
     
-    // Estados
     const [cartoes, setCartoes] = useState<CartaoCadastrado[]>([]);
     const [numeroCartao, setNumeroCartao] = useState('');
     const [nomePersonalizado, setNomePersonalizado] = useState('');
@@ -29,13 +28,11 @@ export function MeusCartoes() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // Formatação de exibição do cartão (0000 0000...)
     const formatarParaExibicao = (valor: string) => {
         const apenasNumeros = valor.replace(/\D/g, '').padEnd(16, '•');
         return apenasNumeros.replace(/(.{4})/g, '$1 ').trim();
     };
 
-    // Busca cartões do usuário
     const carregarCartoes = useCallback(async () => {
         try {
             setFetching(true);
@@ -52,7 +49,6 @@ export function MeusCartoes() {
         carregarCartoes();
     }, [carregarCartoes]);
 
-    // Identificação de BIN automática
     useEffect(() => {
         const algarismos = numeroCartao.replace(/\D/g, '');
         if (algarismos.length >= 6) {
@@ -77,14 +73,12 @@ export function MeusCartoes() {
                 multiplicadorPontos: dadosDetectados.multiplicadorPadrao,
             });
             
-            // Reset de campos
             setNumeroCartao('');
             setNomePersonalizado('');
             setDadosDetectados(null);
             carregarCartoes();
         } catch (err) {
-            console.error("Erro ao salvar:", err);
-            alert("Erro ao salvar cartão.");
+            console.error("Erro ao salvar cart:", err);
         } finally {
             setLoading(false);
         }
@@ -92,26 +86,23 @@ export function MeusCartoes() {
 
     const handleExcluir = async (id: number) => {
         if (!window.confirm("Deseja realmente excluir este cartão?")) return;
-        
         try {
             await api.delete(`/cartoes/${id}`);
             setCartoes(prev => prev.filter(c => c.id !== id));
         } catch (err) {
-            console.error("Erro ao excluir:", err);
-            alert("Falha ao excluir o cartão.");
+            console.error("Erro ao carregar cartões:", err);
         }
     };
 
-    // Estilização dinâmica baseada no banco
     const obterCorCartao = (banco?: string) => {
         if (!banco) return 'bg-slate-900 border border-slate-800 opacity-50';
         const b = banco.toLowerCase();
-        if (b.includes('ita')) return 'bg-linear-to-br from-orange-500 to-orange-600 shadow-orange-500/20';
-        if (b.includes('amex') || b.includes('american')) return 'bg-linear-to-br from-emerald-500 to-teal-700 shadow-emerald-500/20';
-        if (b.includes('nubank')) return 'bg-linear-to-br from-purple-600 to-indigo-900 shadow-purple-500/20';
-        if (b.includes('bradesco')) return 'bg-linear-to-br from-red-600 to-red-800 shadow-red-500/20';
-        if (b.includes('santander')) return 'bg-linear-to-br from-red-500 to-slate-900 shadow-red-500/20';
-        return 'bg-linear-to-br from-indigo-600 to-purple-800';
+        if (b.includes('ita')) return 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-orange-500/20';
+        if (b.includes('amex') || b.includes('american')) return 'bg-gradient-to-br from-emerald-500 to-teal-700 shadow-emerald-500/20';
+        if (b.includes('nubank')) return 'bg-gradient-to-br from-purple-600 to-indigo-900 shadow-purple-500/20';
+        if (b.includes('bradesco')) return 'bg-gradient-to-br from-red-600 to-red-800 shadow-red-500/20';
+        if (b.includes('santander')) return 'bg-gradient-to-br from-red-500 to-slate-900 shadow-red-500/20';
+        return 'bg-gradient-to-br from-indigo-600 to-purple-800 shadow-indigo-500/20';
     };
 
     return (
@@ -127,7 +118,7 @@ export function MeusCartoes() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                     
-                    {/* Lista de Cartões (Lado Esquerdo) */}
+                    {/* Lista de Cartões (Esquerda) */}
                     <div className="lg:col-span-5 space-y-6">
                         <div className="flex items-center gap-3 px-2">
                             <Wallet className="text-indigo-500" />
@@ -139,9 +130,9 @@ export function MeusCartoes() {
                                 <div className="flex justify-center py-10"><Loader2 className="animate-spin text-indigo-500" /></div>
                             ) : cartoes.length > 0 ? (
                                 cartoes.map(cartao => (
-                                    <div key={cartao.id} className="group bg-slate-900/40 border border-slate-800 p-5 rounded-2xl flex items-center justify-between hover:border-slate-700 transition-all">
+                                    <div key={cartao.id} className="group bg-slate-900/40 border border-slate-800 p-5 rounded-2xl flex items-center justify-between hover:border-indigo-500/30 transition-all backdrop-blur-sm">
                                         <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+                                            <div className="w-12 h-12 bg-slate-800 rounded-xl flex items-center justify-center text-indigo-400 group-hover:bg-indigo-500/10 transition-all">
                                                 <CreditCard size={24} />
                                             </div>
                                             <div>
@@ -160,47 +151,47 @@ export function MeusCartoes() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-slate-500 text-center py-10 border border-dashed border-slate-800 rounded-2xl">
-                                    Nenhum cartão cadastrado.
-                                </p>
+                                <div className="text-slate-500 text-center py-12 border-2 border-dashed border-slate-800 rounded-3xl">
+                                    <p>Nenhum cartão cadastrado.</p>
+                                </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Formulário e Preview (Lado Direito) */}
-                    <div className="lg:col-span-7 bg-slate-900/20 border border-slate-800/50 rounded-4xl p-6 md:p-10">
+                    {/* Formulário e Preview (Direita) */}
+                    <div className="lg:col-span-7 bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-6 md:p-10 backdrop-blur-xl shadow-2xl">
                         <div className="flex flex-col xl:flex-row gap-10">
                             
                             <div className="flex-1 space-y-6">
-                                <h3 className="text-xl font-bold font-prosto">NOVO CARTÃO</h3>
+                                <h3 className="text-xl font-bold font-prosto text-indigo-400">NOVO CARTÃO</h3>
                                 <form onSubmit={handleSalvar} className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">NÚMERO DO CARTÃO (BIN)</label>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Número (BIN)</label>
                                         <input
                                             required
                                             className="w-full bg-slate-950 border border-slate-800 p-4 rounded-2xl outline-none focus:border-indigo-500 transition-all text-white font-mono"
-                                            placeholder="Digite os primeiros 6 dígitos..."
+                                            placeholder="6 primeiros dígitos"
                                             value={numeroCartao}
-                                            maxLength={16}
+                                            maxLength={6}
                                             onChange={e => setNumeroCartao(e.target.value.replace(/\D/g, ''))}
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">APELIDO DO CARTÃO</label>
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Apelido</label>
                                         <input
                                             className="w-full bg-slate-950 border border-slate-800 p-4 rounded-2xl outline-none focus:border-indigo-500 transition-all text-white"
-                                            placeholder="Ex: Nubank Platinum"
+                                            placeholder="Ex: Cartão Principal"
                                             value={nomePersonalizado}
                                             onChange={e => setNomePersonalizado(e.target.value)}
                                         />
                                     </div>
 
                                     {dadosDetectados && (
-                                        <div className="p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl animate-in fade-in slide-in-from-top-2">
-                                            <p className="text-indigo-400 text-xs font-bold uppercase tracking-widest mb-1">Detectado via BIN:</p>
+                                        <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl animate-in zoom-in-95 duration-300">
+                                            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Tecnologia Identificada</p>
                                             <p className="text-white font-bold">{dadosDetectados.nomeExibicao}</p>
-                                            <p className="text-slate-400 text-[10px] uppercase tracking-widest font-medium">
-                                                {dadosDetectados.bandeira} • {dadosDetectados.multiplicadorPadrao} PTS/DÓLAR
+                                            <p className="text-slate-500 text-[10px] uppercase font-bold">
+                                                {dadosDetectados.bandeira} • {dadosDetectados.multiplicadorPadrao} PTS por dólar
                                             </p>
                                         </div>
                                     )}
@@ -208,33 +199,39 @@ export function MeusCartoes() {
                                     <button
                                         type="submit"
                                         disabled={!dadosDetectados || loading}
-                                        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 p-4 rounded-2xl font-bold flex justify-center items-center gap-2 transition-all text-white shadow-lg shadow-indigo-600/20 active:scale-95 mt-4 uppercase tracking-widest"
+                                        className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 p-4 rounded-2xl font-bold flex justify-center items-center gap-2 transition-all text-white shadow-lg shadow-indigo-600/20 active:scale-95 mt-4 uppercase tracking-widest"
                                     >
-                                        {loading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> Confirmar Cartão</>}
+                                        {loading ? <Loader2 className="animate-spin" /> : <><Save size={20} /> Salvar na Carteira</>}
                                     </button>
                                 </form>
                             </div>
 
-                            {/* Cartão Visual */}
-                            <div className="flex items-center justify-center">
-                                <div className={`w-80 h-48 rounded-2xl p-6 flex flex-col justify-between shadow-2xl transition-all duration-500 hover:rotate-2 ${obterCorCartao(dadosDetectados?.banco)}`}>
+                            {/* Cartão Visual Interativo */}
+                            <div className="flex items-center justify-center py-6">
+                                <div className={`w-80 h-48 rounded-2xl p-6 flex flex-col justify-between shadow-2xl transition-all duration-700 hover:scale-105 hover:-rotate-2 ${obterCorCartao(dadosDetectados?.banco)}`}>
                                     <div className="flex justify-between items-start">
-                                        <div className="w-10 h-8 bg-white/10 rounded-md backdrop-blur-md border border-white/10 flex items-center justify-center">
-                                            <div className="w-6 h-4 bg-yellow-500/20 border border-yellow-500/40 rounded-sm" />
+                                        <div className="w-12 h-9 bg-linear-to-br from-yellow-200/40 to-yellow-500/10 rounded-lg border border-white/20 flex items-center justify-center">
+                                            <div className="w-8 h-6 border border-black/10 rounded-sm" />
                                         </div>
-                                        <span className="text-white/40 tracking-widest uppercase font-black text-[10px]">
+                                        <span className="text-white/30 tracking-[0.3em] uppercase font-black text-[9px]">
                                             {dadosDetectados?.bandeira || "NETWORK"}
                                         </span>
                                     </div>
-                                    <div className="space-y-2">
-                                        <p className="text-lg font-mono tracking-[0.15em] text-white/90">
+                                    <div className="space-y-4">
+                                        <p className="text-lg font-mono tracking-[0.18em] text-white/90 drop-shadow-md">
                                             {formatarParaExibicao(numeroCartao)}
                                         </p>
-                                        <div className="flex flex-col">
-                                            <p className="text-[9px] text-white/40 uppercase font-bold tracking-tighter">NOME NO CARTÃO</p>
-                                            <p className="text-[11px] text-white/80 uppercase font-bold truncate max-w-50">
-                                                {nomePersonalizado || dadosDetectados?.nomeExibicao || "Aguardando BIN..."}
-                                            </p>
+                                        <div className="flex justify-between items-end">
+                                            <div className="flex flex-col">
+                                                <p className="text-[8px] text-white/40 uppercase font-black tracking-widest">Titular</p>
+                                                <p className="text-[10px] text-white font-bold uppercase truncate max-w-35">
+                                                    {nomePersonalizado || dadosDetectados?.nomeExibicao || "Aguardando..."}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-[8px] text-white/40 uppercase font-black tracking-widest">Validade</p>
+                                                <p className="text-[10px] text-white font-bold font-mono">12/30</p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -20,7 +20,6 @@ import java.util.List;
 @RequestMapping("/cartoes")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-
 public class CartaoController {
 
     @Autowired
@@ -44,33 +43,35 @@ public class CartaoController {
         cartao.setMultiplicadorPontos(dto.multiplicadorPontos());
         cartao.setBandeira(dto.bandeira());
 
-        // 1. Vincula o Usuário (Garante usuario_id no banco)
+        // Vincula o Usuário (Fixo em 1L conforme seu padrão)
         usuarioRepository.findById(1L).ifPresent(cartao::setUsuario);
 
-        // 2. Vincula o Programa DO USUÁRIO (Garante programa_id no banco)
-        if (dto.nomeCartao().toLowerCase().contains("nubank")) {
-            // Buscamos o programa 'Meu Nubank' que já existe para o usuário 1
-            programaDoUsuarioRepository.findById(2L).ifPresent(cartao::setProgramaDoUsuario);
-        } else if (dto.nomeCartao().toLowerCase().contains("itau")) {
-            programaDoUsuarioRepository.findById(1L).ifPresent(cartao::setProgramaDoUsuario);
+        // Lógica Dinâmica:
+        // 1. Se o DTO trouxer um ID de programa, usamos ele (Recomendado)
+        // 2. Senão, tenta encontrar pelo nome do banco/cartão
+        if (dto.programaId() != null) {
+            programaDoUsuarioRepository.findById(dto.programaId()).ifPresent(cartao::setProgramaDoUsuario);
+        } else {
+            String termoBusca = dto.nomeCartao().split(" ")[0].toLowerCase();
+            programaDoUsuarioRepository.findAll().stream()
+                    .filter(p -> p.getNome().toLowerCase().contains(termoBusca))
+                    .findFirst()
+                    .ifPresent(cartao::setProgramaDoUsuario);
         }
 
         return ResponseEntity.ok(repository.save(cartao));
     }
-
 
     @GetMapping("/detalhes/{id}")
     public ResponseEntity<CartaoSaidaDTO> buscarDetalhes(@PathVariable Long id) {
         return ResponseEntity.ok(cartaoService.buscarDetalhesPorId(id));
     }
 
-    // Listar cartões por usuário
-    @GetMapping("/{usuarioId}")
+    @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<CartaoModel>> listarPorUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(cartaoService.listarPorUsuario(usuarioId));
     }
 
-    // Buscar cartão por ID
     @GetMapping("/{id}")
     public ResponseEntity<CartaoModel> buscarPorId(@PathVariable Long id) {
         return ResponseEntity.ok(cartaoService.buscarPorId(id));
@@ -78,26 +79,22 @@ public class CartaoController {
 
     @GetMapping("/identificar/{numero}")
     public ResponseEntity<CatalogoCartaoModel> identificar(@PathVariable String numero) {
-        // O Service vai buscar pelo BIN (substring 0,6)
         CatalogoCartaoModel catalogo = cartaoService.identificarPeloNumero(numero);
         return ResponseEntity.ok(catalogo);
     }
 
-    // Atualizar cartão
     @PutMapping("/{id}")
     public ResponseEntity<CartaoModel> atualizar(@PathVariable Long id, @RequestBody CartaoModel cartao) {
         return ResponseEntity.ok(cartaoService.atualizar(id, cartao));
     }
 
-    // Deletar cartão
     @DeleteMapping("/{id}")
-    @Transactional // Importante para garantir a deleção no banco
+    @Transactional
     public ResponseEntity<Void> excluir(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ OPÇÃO ALTERNATIVA: Se quiser usar DTOs em alguns endpoints
     @GetMapping("/dto")
     public ResponseEntity<List<CartaoSaidaDTO>> listarTodosDTO() {
         return ResponseEntity.ok(cartaoService.listarTodosDTO());

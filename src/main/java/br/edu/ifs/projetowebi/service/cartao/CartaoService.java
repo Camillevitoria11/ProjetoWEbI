@@ -69,31 +69,37 @@ public class CartaoService {
     }
 
     public List<CartaoSaidaDTO> listarTodosDTO() {
-        return cartaoRepository.findAll().stream()
-                .map(cartao -> new CartaoSaidaDTO(
-                        cartao.getId(),
-                        cartao.getNomeCartao(),
-                        cartao.getMultiplicadorPontos(),
-                        cartao.getBandeira() != null ? cartao.getBandeira() : "Não identificada",
-                        cartao.getUsuario() != null ? cartao.getUsuario().getNome() : "Sem Usuário",
-                        cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getNome() : "Sem Programa",
-                        // ADICIONADO: O 7º argumento (Saldo de Pontos)
-                        cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getSaldoPontos() : 0
-                )).toList();
-    }
+        return cartaoRepository.findByUsuarioId(1L).stream()
+                .map(cartao -> {
+                    var programa = cartao.getProgramaDoUsuario();
 
+                    return new CartaoSaidaDTO(
+                            cartao.getId(),                          // 1. Long
+                            cartao.getNomeCartao(),                  // 2. String
+                            cartao.getMultiplicadorPontos(),         // 3. BigDecimal
+                            cartao.getBandeira() != null ? cartao.getBandeira() : "Não identificada", // 4. String
+                            cartao.getUsuario() != null ? cartao.getUsuario().getNome() : "Sem Usuário", // 5. String
+                            programa != null ? programa.getNome() : "Sem Programa",                      // 6. String
+                            programa != null ? programa.getId() : 0L,                            // 7. Long (ID vem primeiro)
+                            programa != null ? programa.getSaldoPontos() : 0                             // 8. Integer (Saldo por último)
+                    );
+                }).toList();
+    }
     public CartaoSaidaDTO buscarDetalhesPorId(Long id) {
         CartaoModel cartao = cartaoRepository.findById(id)
                 .orElseThrow(() -> new NaoEncontradoException("Cartão não encontrado"));
+
+        var programa = cartao.getProgramaDoUsuario();
 
         return new CartaoSaidaDTO(
                 cartao.getId(),
                 cartao.getNomeCartao(),
                 cartao.getMultiplicadorPontos(),
-                cartao.getBandeira() != null ? cartao.getBandeira() : null,
-                cartao.getUsuario() != null ? cartao.getUsuario().getNome() : null,
-                cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getNome() : null,
-                cartao.getProgramaDoUsuario() != null ? cartao.getProgramaDoUsuario().getSaldoPontos() : 0
+                cartao.getBandeira() != null ? cartao.getBandeira() : "Não identificada",
+                cartao.getUsuario() != null ? cartao.getUsuario().getNome() : "Sem Usuário",
+                programa != null ? programa.getNome() : "Sem Programa",
+                programa != null ? programa.getId() : 0L, // Campo 7: Long programaId
+                programa != null ? programa.getSaldoPontos() : 0  // Campo 8: Integer saldoPontos
         );
     }
 }
