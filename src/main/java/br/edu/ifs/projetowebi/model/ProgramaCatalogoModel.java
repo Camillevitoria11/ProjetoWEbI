@@ -8,8 +8,9 @@ import lombok.Data;
 @Table(name = "programas_catalogo")
 public class ProgramaCatalogoModel {
     @Id
-    @Column(nullable = false, unique = true)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
 
     @Column(nullable = false, unique = true)
     private String nome; // "Smiles", "Azul", "Latam Pass"
