@@ -1,3 +1,4 @@
+// RegistrarCompra.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, Save, Loader2 } from 'lucide-react';
@@ -7,7 +8,7 @@ interface Cartao {
     id: number;
     nomeCartao: string;
     bandeira: string;
-    multiplicadorPontos: number;
+    multiplicadorPontos: number | null;
 }
 
 interface ApiError {
@@ -15,14 +16,10 @@ interface ApiError {
         data: {
             message?: string;
             error?: string;
-            [key: string]: unknown;
         };
         status: number;
-        headers: Record<string, string>;
     };
-    request?: XMLHttpRequest;
-    message?: string;
-    code?: string;
+    message: string;
 }
 
 export function RegistrarCompra() {
@@ -35,31 +32,31 @@ export function RegistrarCompra() {
     const [valor, setValor] = useState('');
     const [cartaoId, setCartaoId] = useState('');
     const [arquivo, setArquivo] = useState<File | null>(null);
+    const [erro, setErro] = useState<string>('');
 
-    // BUSCA OS CARTÕES
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/login');
+            return;
+        }
+
         const carregarCartoes = async () => {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                alert('Sessão expirada. Faça login novamente.');
-                navigate('/login');
-                return;
-            }
-            
             setLoadingCartoes(true);
             try {
                 const response = await api.get('/cartoes');
-                console.log("✅ Cartões recebidos:", response.data);
-                setCartoes(response.data);
+                const cartoesComMultiplicador = response.data.map((cartao: Cartao) => ({
+                    ...cartao,
+                    multiplicadorPontos: cartao.multiplicadorPontos || 1
+                }));
+                setCartoes(cartoesComMultiplicador);
                 
-                if (response.data.length > 0) {
-                    setCartaoId(response.data[0].id.toString());
+                if (cartoesComMultiplicador.length > 0) {
+                    setCartaoId(cartoesComMultiplicador[0].id.toString());
                 }
             } catch (error: unknown) {
-                console.error("❌ Erro ao buscar cartões", error);
                 const apiError = error as ApiError;
-                if (apiError.response?.status === 401 || apiError.response?.status === 403) {
-                    alert('Sessão expirada. Faça login novamente.');
+                if (apiError.response?.status === 401) {
                     localStorage.removeItem('token');
                     navigate('/login');
                 }
@@ -72,43 +69,31 @@ export function RegistrarCompra() {
     }, [navigate]);
 
     const formatarValor = (valor: string) => {
-        let valorFormatado = valor.replace(/[^\d.]/g, '');
-        const partes = valorFormatado.split('.');
-        if (partes.length > 2) {
-            valorFormatado = partes[0] + '.' + partes.slice(1).join('');
-        }
-        return valorFormatado;
+        return valor.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
     };
 
     const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const valorFormatado = formatarValor(e.target.value);
-        setValor(valorFormatado);
+        setValor(formatarValor(e.target.value));
+        setErro('');
     };
 
     const handleSalvar = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErro('');
         
-        // VALIDAÇÃO
         if (!descricao.trim()) {
-            alert('Informe a descrição da compra');
+            setErro('Informe a descrição da compra');
             return;
         }
         
         const valorNumerico = parseFloat(valor);
         if (!valor || isNaN(valorNumerico) || valorNumerico <= 0) {
-            alert('Informe um valor válido maior que zero');
+            setErro('Informe um valor válido maior que zero');
             return;
         }
         
         if (!cartaoId) {
-            alert('Selecione um cartão');
-            return;
-        }
-
-        const token = localStorage.getItem('token');
-        if (!token) {
-            alert('Sessão expirada. Faça login novamente.');
-            navigate('/login');
+            setErro('Selecione um cartão');
             return;
         }
 
@@ -121,103 +106,45 @@ export function RegistrarCompra() {
                 cartaoId: parseInt(cartaoId, 10)
             };
 
-            console.log('📤 Enviando compra:', dadosCompra);
-            console.log('🔑 Token atual:', token);
-            console.log('🎯 Endpoint: POST /compras');
-
-            // Testa outras rotas POST para ver se o problema é específico de /compras
-            console.log('🔍 Testando se outras rotas POST funcionam...');
-            try {
-                // Testa um endpoint POST que deveria funcionar
-                const testData = { nome: 'teste' };
-                const testResponse = await api.post('/cartoes', testData);
-                console.log('✅ Outro POST funcionou:', testResponse.status);
-            } catch (postError) {
-                console.log('❌ Outros POSTs também falham:', postError);
+            const formData = new FormData();
+            formData.append('dados', new Blob([JSON.stringify(dadosCompra)], {
+                type: 'application/json'
+            }));
+            
+            if (arquivo) {
+                formData.append('comprovante', arquivo);
+            } else {
+                formData.append('comprovante', new Blob([]));
             }
-
-            // Tenta a requisição real
-            const response = await api.post('/compras', dadosCompra);
             
-            console.log('✅ Resposta da API:', response.data);
-            alert('✅ Compra registrada com sucesso!');
+            await api.post('/compras/registrar', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             
-            // Limpa o formulário
+            alert('Compra registrada com sucesso!');
+            
             setDescricao('');
             setValor('');
-            setCartaoId(cartoes.length > 0 ? cartoes[0].id.toString() : '');
+            if (cartoes.length > 0) {
+                setCartaoId(cartoes[0].id.toString());
+            }
             setArquivo(null);
             
         } catch (error: unknown) {
-            console.error("❌ Erro completo:", error);
-            
             const apiError = error as ApiError;
+            let mensagemErro = 'Erro ao registrar compra';
             
             if (apiError.response) {
-                console.error('📊 Status do erro:', apiError.response.status);
-                
-                // Headers importantes para diagnóstico
-                console.log('📋 Headers de resposta:', apiError.response.headers);
-                
-                // ANALISE ESPECÍFICA PARA ERRO 403
-                if (apiError.response.status === 403) {
-                    console.log('🔍 DIAGNÓSTICO DO ERRO 403:');
-                    console.log('   1. Token JWT válido: SIM (GET /cartoes funciona)');
-                    console.log('   2. CORS configurado: SIM (headers mostram)');
-                    console.log('   3. Problema específico do endpoint /compras');
-                    
-                    const mensagemDetalhada = `
-🚨 ERRO 403 - ACESSO NEGADO
-
-O que sabemos:
-✅ Seu token JWT é válido (GET /cartoes funciona)
-✅ CORS está configurado corretamente
-✅ A conexão com o servidor está ok
-
-O problema:
-🔒 O Spring Security está bloqueando o endpoint POST /compras
-
-Possíveis causas no backend:
-1. 🔐 Filtro JWT não está processando o endpoint /compras
-2. 🛡️ SecurityConfig bloqueia POST para /compras
-3. 👤 Usuário não tem role/permissão específica
-4. 📍 Endpoint /compras não existe no Controller
-
-Ação necessária:
-📍 Verifique no backend:
-   - CompraController.java existe e tem @PostMapping("/compras")
-   - SecurityConfig permite POST para /compras
-   - JwtAuthenticationFilter processa todas as rotas
-`;
-                    
-                    alert(mensagemDetalhada);
-                    
-                    // Sugere ação imediata
-                    console.log('💡 Ação imediata para desenvolvedor backend:');
-                    console.log('   1. Verifique CompraController.java');
-                    console.log('   2. Verifique SecurityConfig - endpoints permitidos');
-                    console.log('   3. Verifique logs do Spring Boot');
-                    
-                } else if (apiError.response.status === 401) {
-                    alert('🔐 Sessão expirada. Faça login novamente.');
+                if (apiError.response.status === 401) {
+                    mensagemErro = 'Sessão expirada. Faça login novamente.';
                     localStorage.removeItem('token');
-                    navigate('/login');
+                    setTimeout(() => navigate('/login'), 1000);
                 } else if (apiError.response.status === 400) {
-                    const mensagemErro = apiError.response.data?.message || 
-                                       apiError.response.data?.error || 
-                                       'Dados inválidos';
-                    alert(`❌ Erro de validação: ${mensagemErro}`);
-                } else {
-                    const mensagemErro = apiError.response.data?.message || 
-                                       apiError.response.data?.error || 
-                                       `Erro ${apiError.response.status}`;
-                    alert(`❌ Erro: ${mensagemErro}`);
+                    mensagemErro = apiError.response.data?.message || 'Dados inválidos';
                 }
-            } else if (apiError.request) {
-                alert('🌐 Não foi possível conectar ao servidor. Verifique sua conexão.');
-            } else {
-                alert('❌ Erro ao processar requisição.');
             }
+            
+            setErro(mensagemErro);
         } finally {
             setLoading(false);
         }
@@ -225,77 +152,138 @@ Ação necessária:
 
     const handleArquivoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0] || null;
-        setArquivo(file);
         
         if (file) {
-            console.log('📄 Arquivo selecionado:', file.name, 'Tamanho:', file.size, 'bytes');
+            const maxSize = 5 * 1024 * 1024;
+            const tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+            
+            if (file.size > maxSize) {
+                setErro('Arquivo muito grande. Tamanho máximo: 5MB');
+                return;
+            }
+            
+            if (!tiposPermitidos.includes(file.type)) {
+                setErro('Tipo de arquivo não permitido. Use JPG, PNG ou PDF.');
+                return;
+            }
         }
+        
+        setArquivo(file);
+        setErro('');
     };
 
+    const handleCartaoChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setCartaoId(e.target.value);
+        setErro('');
+    };
+
+    const handleDescricaoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setDescricao(e.target.value);
+        setErro('');
+    };
+
+    if (loadingCartoes && cartoes.length === 0) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex justify-center items-center">
+                <div className="w-full max-w-2xl bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
+                    <button 
+                        onClick={() => navigate('/dashboard')}
+                        className="flex items-center gap-2 text-slate-400 hover:text-white mb-8 transition-colors"
+                    >
+                        <ArrowLeft size={20} /> Voltar para Dashboard
+                    </button>
+                    
+                    <div className="text-center py-12">
+                        <Loader2 className="animate-spin text-indigo-500 w-12 h-12 mx-auto mb-4" />
+                        <p className="text-slate-400">Carregando seus cartões...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const cartaoSelecionado = cartoes.find(c => c.id.toString() === cartaoId);
+    const multiplicador = cartaoSelecionado?.multiplicadorPontos || 1;
+    const valorNumerico = valor ? parseFloat(valor) : 0;
+    const pontosEstimados = valorNumerico > 0 ? Math.round(valorNumerico * multiplicador) : 0;
+
     return (
-        <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex justify-center items-center">
-            <div className="w-full max-w-2xl bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm">
+        <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex justify-center items-start">
+            <div className="w-full max-w-2xl bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm mt-8">
                 <button 
                     onClick={() => navigate('/dashboard')}
-                    className="flex items-center gap-2 text-slate-500 hover:text-white mb-8 transition-colors"
+                    className="flex items-center gap-2 text-slate-400 hover:text-white mb-8 transition-colors"
                 >
                     <ArrowLeft size={20} /> Voltar para Dashboard
                 </button>
 
-                <h2 className="text-3xl font-bold mb-2">Nova Compra</h2>
-                <p className="text-slate-500 mb-8">Preencha os dados para calcular suas milhas automaticamente.</p>
+                <h2 className="text-3xl font-bold mb-2 text-indigo-400">
+                    Nova Compra
+                </h2>
+                <p className="text-slate-400 mb-8">Preencha os dados para calcular suas milhas automaticamente.</p>
+
+                {erro && (
+                    <div className="mb-6 p-4 bg-red-900/30 border border-red-800 rounded-xl">
+                        <p className="text-red-300 text-sm">{erro}</p>
+                    </div>
+                )}
 
                 <form onSubmit={handleSalvar} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400">Descrição da Compra *</label>
+                        <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                            Descrição da Compra
+                        </label>
                         <input
                             required
                             placeholder="Ex: Assinatura Netflix, Supermercado, Restaurante..."
-                            className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl focus:border-indigo-500 outline-none transition-all"
+                            className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none transition-all hover:border-slate-600"
                             value={descricao}
-                            onChange={e => setDescricao(e.target.value)}
+                            onChange={handleDescricaoChange}
                             maxLength={100}
                         />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-400">Valor (R$) *</label>
+                            <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                Valor (R$)
+                            </label>
                             <input
                                 required
                                 type="text"
                                 inputMode="decimal"
                                 placeholder="0,00"
-                                className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl focus:border-indigo-500 outline-none transition-all"
+                                className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none transition-all hover:border-slate-600"
                                 value={valor}
                                 onChange={handleValorChange}
                                 pattern="[0-9]*[.]?[0-9]*"
                             />
-                            <p className="text-xs text-slate-500">Use ponto como separador decimal (ex: 49.98)</p>
+                            <p className="text-xs text-slate-500">
+                                Use ponto como separador decimal (ex: 49.98)
+                            </p>
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-400">Cartão Utilizado *</label>
+                            <label className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                Cartão Utilizado
+                            </label>
                             <div className="relative">
                                 <select
                                     required
                                     disabled={loadingCartoes || cartoes.length === 0}
-                                    className="w-full p-4 bg-slate-950 border border-slate-800 rounded-xl focus:border-indigo-500 outline-none transition-all appearance-none text-white disabled:opacity-50"
+                                    className="w-full p-4 bg-slate-900 border border-slate-700 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 outline-none transition-all appearance-none text-white disabled:opacity-50 hover:border-slate-600"
                                     value={cartaoId}
-                                    onChange={e => setCartaoId(e.target.value)}
+                                    onChange={handleCartaoChange}
                                 >
-                                    <option value="" className="bg-slate-900">Selecione um cartão</option>
-                                    {cartoes.length > 0 ? (
-                                        cartoes.map((c) => (
-                                            <option key={c.id} value={c.id} className="bg-slate-900">
-                                                {c.nomeCartao} ({c.bandeira} - {c.multiplicadorPontos}x)
-                                            </option>
-                                        ))
-                                    ) : (
-                                        <option disabled className="bg-slate-900">
-                                            {loadingCartoes ? 'Carregando cartões...' : 'Nenhum cartão cadastrado'}
+                                    <option value="" className="bg-slate-800">Selecione um cartão</option>
+                                    {cartoes.map((c) => (
+                                        <option key={c.id} value={c.id} className="bg-slate-800">
+                                            {c.nomeCartao} ({c.bandeira} - {(c.multiplicadorPontos || 1).toFixed(1)}x)
                                         </option>
-                                    )}
+                                    ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
                                     <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20">
@@ -304,12 +292,12 @@ Ação necessária:
                                 </div>
                             </div>
                             {cartoes.length === 0 && !loadingCartoes && (
-                                <p className="text-sm text-amber-500">
+                                <p className="text-sm text-amber-400">
                                     Você precisa cadastrar um cartão primeiro.{' '}
                                     <button 
                                         type="button"
-                                        onClick={() => navigate('/meus-cartoes')}
-                                        className="text-indigo-400 hover:text-indigo-300 underline"
+                                        onClick={() => navigate('/cartoes')}
+                                        className="text-indigo-300 hover:text-indigo-200 underline"
                                     >
                                         Cadastrar cartão
                                     </button>
@@ -319,24 +307,26 @@ Ação necessária:
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-400">Comprovante (Opcional)</label>
-                        <div className="border-2 border-dashed border-slate-800 rounded-xl p-8 text-center hover:border-indigo-500/50 transition-colors relative">
+                        <label className="text-sm font-medium text-slate-300">Comprovante (Opcional)</label>
+                        <div className="border-2 border-dashed border-slate-700 rounded-xl p-8 text-center hover:border-indigo-500/50 transition-colors relative group">
                             <input
                                 type="file"
                                 accept=".pdf,.jpg,.jpeg,.png"
                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                 onChange={handleArquivoChange}
                             />
-                            <Upload className="mx-auto text-slate-600 mb-2" />
-                            <p className="text-sm text-slate-500">
+                            <Upload className="mx-auto text-slate-500 mb-2 group-hover:text-indigo-400 transition-colors" />
+                            <p className="text-sm text-slate-400">
                                 {arquivo ? (
                                     <>
-                                        <span className="text-emerald-400">{arquivo.name}</span>
+                                        <span className="text-emerald-300">{arquivo.name}</span>
                                         <br />
-                                        <span className="text-xs">({Math.round(arquivo.size / 1024)} KB)</span>
+                                        <span className="text-xs text-slate-500">
+                                            ({Math.round(arquivo.size / 1024)} KB)
+                                        </span>
                                     </>
                                 ) : (
-                                    "Selecione ou arraste o comprovante até aqui"
+                                    "Clique ou arraste o comprovante até aqui"
                                 )}
                             </p>
                             <p className="text-xs text-slate-600 mt-2">
@@ -345,26 +335,45 @@ Ação necessária:
                         </div>
                     </div>
 
+                    {cartaoId && valorNumerico > 0 && (
+                        <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl">
+                            <p className="text-sm text-slate-400 mb-2">🎯 Cálculo estimado:</p>
+                            <div className="flex items-center justify-between">
+                                <span className="text-slate-300">Valor:</span>
+                                <span className="font-bold">R$ {valorNumerico.toFixed(2)}</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                                <span className="text-slate-300">Multiplicador:</span>
+                                <span className="font-bold text-indigo-300">
+                                    {multiplicador.toFixed(1)}x
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-800">
+                                <span className="text-slate-300">Pontos estimados:</span>
+                                <span className="font-bold text-emerald-300">
+                                    {pontosEstimados} pts
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="text-sm text-slate-500">
-                        <p><span className="text-red-500">*</span> Campos obrigatórios</p>
-                        <p className="text-xs mt-2 text-amber-400">
-                            ⚠️ Se receber erro 403, o problema é no backend (SecurityConfig ou Controller)
-                        </p>
+                        <p><span className="text-red-400">*</span> Campos obrigatórios</p>
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4">
                         <button
                             type="button"
                             onClick={() => navigate('/dashboard')}
-                            className="flex-1 bg-slate-800 hover:bg-slate-700 p-4 rounded-xl font-bold transition-all text-center"
+                            className="flex-1 bg-slate-800 hover:bg-slate-700 p-4 rounded-xl font-bold transition-all text-center border border-slate-700 hover:border-slate-600"
                         >
                             Cancelar
                         </button>
                         
                         <button
                             type="submit"
-                            disabled={loading || loadingCartoes || cartoes.length === 0}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:cursor-not-allowed p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all"
+                            disabled={loading || loadingCartoes || cartoes.length === 0 || !!erro}
+                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:cursor-not-allowed p-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-indigo-500/20"
                         >
                             {loading ? (
                                 <>

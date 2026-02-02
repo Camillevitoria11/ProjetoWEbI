@@ -15,17 +15,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
+
 public class CompraService {
 
     private final CompraRepository compraRepository;
@@ -34,7 +30,6 @@ public class CompraService {
 
     // Diretório para salvar os comprovantes (Requisito de Upload)
     private final String uploadDir = "uploads/comprovantes/";
-
     /**
      * Processa uma nova compra vinda do Frontend com arquivo anexo.
      * Atende aos requisitos de cálculo automático e suporte a arquivos.

@@ -24,7 +24,6 @@ public class CompraSaidaDTO {
     private String comprovanteUrl;
     private String nomeCartao;
     private String nomeUsuario;
-
     // Construtor para os métodos existentes no service
     public static CompraSaidaDTO fromEntity(CompraModel compra) {
         CompraSaidaDTO dto = new CompraSaidaDTO();
