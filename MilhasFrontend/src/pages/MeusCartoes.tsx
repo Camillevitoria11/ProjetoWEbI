@@ -55,12 +55,20 @@ interface ApiError {
     message?: string;
 }
 
+// Lista fixa dos programas disponíveis no catálogo (do seu arquivo de configuração)
+const PROGRAMAS_DISPONIVEIS_CATALOGO = [
+    { id: 1, nome: 'Smiles', palavrasChave: ['smiles', 'gol'] },
+    { id: 2, nome: 'Azul', palavrasChave: ['azul', 'tudoazul'] },
+    { id: 3, nome: 'Latam Pass', palavrasChave: ['latam', 'pass', 'latampass'] },
+    { id: 4, nome: 'Livelo', palavrasChave: ['livelo', 'bradesco', 'banco do brasil'] },
+    { id: 5, nome: 'Esfera', palavrasChave: ['esfera', 'santander'] }
+];
+
 export function MeusCartoes() {
     const navigate = useNavigate();
     
     const [cartoes, setCartoes] = useState<CartaoCadastrado[]>([]);
     const [programasDoUsuario, setProgramasDoUsuario] = useState<ProgramaDoUsuario[]>([]);
-    const [programasCatalogo, setProgramasCatalogo] = useState<ProgramaCatalogo[]>([]);
     const [numeroCartao, setNumeroCartao] = useState('');
     const [nomePersonalizado, setNomePersonalizado] = useState('');
     const [programaSelecionado, setProgramaSelecionado] = useState<number | ''>('');
@@ -95,7 +103,38 @@ export function MeusCartoes() {
         }
     }, [navigate]);
 
-    // Carregar programas do catálogo (Smiles, Azul, etc.)
+    // Função para mapear nome do programa do usuário para um programa do catálogo
+    const mapearProgramaParaCatalogo = useCallback((nomeProgramaUsuario: string): { id: number; nome: string } | null => {
+        if (!nomeProgramaUsuario) return null;
+        
+        const nomeLower = nomeProgramaUsuario.toLowerCase().trim();
+        
+        // Procura por correspondência exata primeiro
+        for (const programa of PROGRAMAS_DISPONIVEIS_CATALOGO) {
+            if (nomeLower === programa.nome.toLowerCase()) {
+                return { id: programa.id, nome: programa.nome };
+            }
+        }
+        
+        // Procura por palavras-chave
+        for (const programa of PROGRAMAS_DISPONIVEIS_CATALOGO) {
+            for (const palavraChave of programa.palavrasChave) {
+                if (nomeLower.includes(palavraChave.toLowerCase())) {
+                    return { id: programa.id, nome: programa.nome };
+                }
+            }
+        }
+        
+        return null; // Não encontrou correspondência
+    }, []);
+
+    // Função para normalizar o nome do programa para exibição
+    const normalizarNomePrograma = useCallback((nomeProgramaUsuario: string): string => {
+        const programaCatalogo = mapearProgramaParaCatalogo(nomeProgramaUsuario);
+        return programaCatalogo ? programaCatalogo.nome : nomeProgramaUsuario;
+    }, [mapearProgramaParaCatalogo]);
+
+    // Carregar programas do catálogo (apenas os 5 existentes: IDs 1-5)
     const carregarProgramasCatalogo = useCallback(async () => {
         try {
             setLoadingCatalogo(true);
@@ -104,46 +143,86 @@ export function MeusCartoes() {
             const res = await api.get('/programas-catalogo');
             console.log('✅ Programas catálogo carregados:', res.data);
             
-            setProgramasCatalogo(res.data);
+            // Filtrar apenas os 5 programas válidos
+            const programasValidos = res.data.filter((programa: ProgramaCatalogo) => 
+                PROGRAMAS_DISPONIVEIS_CATALOGO.some(p => p.id === programa.id)
+            );
+            
+            console.log('✅ Programas filtrados (apenas válidos):', programasValidos);
+            setProgramasDoUsuario(programasValidos);
+            return programasValidos;
         } catch (error) {
             const apiError = error as ApiError;
             console.error("Erro ao carregar programas catálogo:", apiError);
             
-            // Verifica se é erro de autenticação
             tratarErroAutenticacao(apiError);
+            return [];
         } finally {
             setLoadingCatalogo(false);
         }
     }, [tratarErroAutenticacao]);
 
-    // Carregar programas do usuário
+    // Carregar programas do usuário - filtrados para mostrar apenas os que podem ser associados
     const carregarProgramasDoUsuario = useCallback(async () => {
         try {
             setLoadingProgramas(true);
             console.log('🔄 Carregando programas do usuário...');
             
-            // Verifica autenticação antes de fazer a requisição
             if (!verificarAutenticacao()) return;
             
             const res = await api.get('/programas_usuario');
-            console.log('✅ Programas do usuário carregados:', res.data);
+            console.log('📋 Programas do usuário (bruto):', res.data);
             
-            setProgramasDoUsuario(res.data);
+            // Filtra apenas programas que podem ser mapeados para o catálogo
+            const programasFiltrados = res.data.filter((programa: ProgramaDoUsuario) => {
+                const programaMapeado = mapearProgramaParaCatalogo(programa.nome);
+                return programaMapeado !== null;
+            });
             
-            // Seleciona o primeiro programa se existir
-            if (res.data.length > 0) {
-                setProgramaSelecionado(res.data[0].id);
+            // Adiciona informações do catálogo aos programas filtrados
+            const programasComCatalogo = programasFiltrados.map((programa: ProgramaDoUsuario) => {
+                const programaMapeado = mapearProgramaParaCatalogo(programa.nome);
+                return {
+                    ...programa,
+                    // Se já tem programaCatalogo, mantém; senão, adiciona o mapeado
+                    programaCatalogo: programa.programaCatalogo || (programaMapeado ? {
+                        programaId: programaMapeado.id,
+                        nome: programaMapeado.nome
+                    } : undefined)
+                };
+            });
+            
+            console.log('✅ Programas do usuário (filtrados):', programasComCatalogo);
+            
+            // Log dos programas descartados
+            const programasDescartados = res.data.filter((programa: ProgramaDoUsuario) => {
+                const programaMapeado = mapearProgramaParaCatalogo(programa.nome);
+                return programaMapeado === null;
+            });
+            
+            if (programasDescartados.length > 0) {
+    console.warn('⚠️ Programas descartados (não mapeáveis):', programasDescartados.map((p: ProgramaDoUsuario) => p.nome));
+}
+            
+            setProgramasDoUsuario(programasComCatalogo);
+            
+            if (programasComCatalogo.length > 0) {
+                setProgramaSelecionado(programasComCatalogo[0].id);
+            } else {
+                setProgramaSelecionado('');
             }
+            
+            return programasComCatalogo;
         } catch (error) {
             const apiError = error as ApiError;
             console.error("Erro ao carregar programas do usuário:", apiError);
             
-            // Verifica se é erro de autenticação
             tratarErroAutenticacao(apiError);
+            return [];
         } finally {
             setLoadingProgramas(false);
         }
-    }, [verificarAutenticacao, tratarErroAutenticacao]);
+    }, [verificarAutenticacao, tratarErroAutenticacao, mapearProgramaParaCatalogo]);
 
     // Carregar cartões do usuário logado
     const carregarCartoes = useCallback(async () => {
@@ -151,7 +230,6 @@ export function MeusCartoes() {
             setFetching(true);
             console.log('🔄 Carregando cartões...');
             
-            // Verifica autenticação antes de fazer a requisição
             if (!verificarAutenticacao()) return;
             
             const res = await api.get('/cartoes');
@@ -161,18 +239,36 @@ export function MeusCartoes() {
             const apiError = error as ApiError;
             console.error("❌ Erro ao carregar cartões:", apiError);
             
-            // Verifica se é erro de autenticação
             tratarErroAutenticacao(apiError);
         } finally {
             setFetching(false);
         }
     }, [verificarAutenticacao, tratarErroAutenticacao]);
 
+    // Carregar todos os dados
+    const carregarTodosDados = useCallback(async () => {
+        if (!verificarAutenticacao()) return;
+        
+        try {
+            setFetching(true);
+            console.log('🔄 Iniciando carregamento de todos os dados...');
+            
+            // Carrega em sequência para evitar race conditions
+            await carregarProgramasCatalogo();
+            await carregarProgramasDoUsuario();
+            await carregarCartoes();
+            
+            console.log('✅ Todos os dados carregados com sucesso!');
+        } catch (error) {
+            console.error('❌ Erro ao carregar dados:', error);
+        } finally {
+            setFetching(false);
+        }
+    }, [verificarAutenticacao, carregarProgramasCatalogo, carregarProgramasDoUsuario, carregarCartoes]);
+
     useEffect(() => {
-        carregarProgramasCatalogo();
-        carregarProgramasDoUsuario();
-        carregarCartoes();
-    }, [carregarProgramasCatalogo, carregarProgramasDoUsuario, carregarCartoes]);
+        carregarTodosDados();
+    }, [carregarTodosDados]);
 
     // Detectar BIN
     useEffect(() => {
@@ -207,68 +303,7 @@ export function MeusCartoes() {
         setNumeroCartao(formatted);
     };
 
-    // Função para encontrar o ID correto do catálogo baseado no nome do programa
-    const encontrarProgramaCatalogoId = (nomeProgramaUsuario: string): number | null => {
-        if (!nomeProgramaUsuario) return null;
-        
-        const nomeLower = nomeProgramaUsuario.toLowerCase();
-        
-        // Mapeamento específico para evitar confusão entre programas similares
-        if (nomeLower.includes('azul') || nomeLower.includes('tudoazul')) {
-            // Verifica se é TudoAzul ou Azul
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('tudoazul') || 
-                p.nome.toLowerCase().includes('azul')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        if (nomeLower.includes('smiles')) {
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('smiles')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        if (nomeLower.includes('latam') || nomeLower.includes('pass')) {
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('latam')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        if (nomeLower.includes('multiplus')) {
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('multiplus')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        if (nomeLower.includes('livelo')) {
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('livelo')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        if (nomeLower.includes('esfera')) {
-            const programaCatalogo = programasCatalogo.find(p => 
-                p.nome.toLowerCase().includes('esfera')
-            );
-            return programaCatalogo?.id || null;
-        }
-        
-        // Busca genérica como fallback
-        for (const programaCatalogo of programasCatalogo) {
-            if (nomeLower.includes(programaCatalogo.nome.toLowerCase())) {
-                return programaCatalogo.id;
-            }
-        }
-        
-        return null;
-    };
-
-    // SALVAR CARTÃO COM PROGRAMA SELECIONADO CORRETAMENTE
+    // SALVAR CARTÃO
     const handleSalvar = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -282,29 +317,24 @@ export function MeusCartoes() {
             return;
         }
 
-        // Verifica autenticação antes de tentar salvar
         if (!verificarAutenticacao()) return;
 
         setLoading(true);
         try {
-            // Encontra o programa do usuário selecionado
             const programaUsuario = programasDoUsuario.find(p => p.id === programaSelecionado);
             let programaCatalogoId: number | null = null;
             let nomeCatalogo = '';
 
             if (programaUsuario) {
-                // Tenta primeiro usar o programaCatalogo vinculado (se existir)
+                // Usa o programaCatalogo já mapeado ou tenta mapear
                 if (programaUsuario.programaCatalogo) {
                     programaCatalogoId = programaUsuario.programaCatalogo.programaId;
                     nomeCatalogo = programaUsuario.programaCatalogo.nome;
                 } else {
-                    // Se não tiver programaCatalogo vinculado, busca pelo nome
-                    programaCatalogoId = encontrarProgramaCatalogoId(programaUsuario.nome);
-                    
-                    // Se encontrou, busca o nome do catálogo
-                    if (programaCatalogoId) {
-                        const programaCatalogo = programasCatalogo.find(p => p.id === programaCatalogoId);
-                        nomeCatalogo = programaCatalogo?.nome || '';
+                    const programaMapeado = mapearProgramaParaCatalogo(programaUsuario.nome);
+                    if (programaMapeado) {
+                        programaCatalogoId = programaMapeado.id;
+                        nomeCatalogo = programaMapeado.nome;
                     }
                 }
             }
@@ -321,18 +351,19 @@ export function MeusCartoes() {
             };
 
             console.log('🔄 Enviando dados:', dadosParaEnviar);
-            console.log('Programa do Usuário selecionado:', programaUsuario);
-            console.log('Programa Catalogo ID encontrado:', programaCatalogoId);
-            console.log('Nome do Catálogo:', nomeCatalogo);
-            console.log('Todos programas catálogo:', programasCatalogo);
+            console.log('Programa selecionado:', programaUsuario);
+            console.log('Programa Catalogo ID:', programaCatalogoId);
 
             const response = await api.post('/cartoes', dadosParaEnviar);
             console.log('✅ Resposta do backend:', response.data);
 
+            // Limpa o formulário
             setNumeroCartao('');
             setNomePersonalizado('');
-            setProgramaSelecionado('');
+            setProgramaSelecionado(programasDoUsuario.length > 0 ? programasDoUsuario[0].id : '');
             setDadosDetectados(null);
+            
+            // Recarrega os cartões
             await carregarCartoes();
             
             alert('Cartão salvo com sucesso!');
@@ -360,7 +391,6 @@ export function MeusCartoes() {
     const handleExcluir = async (id: number) => {
         if (!window.confirm("Excluir este cartão?")) return;
         
-        // Verifica autenticação antes de tentar excluir
         if (!verificarAutenticacao()) return;
         
         try {
@@ -380,7 +410,7 @@ export function MeusCartoes() {
         }
     };
 
-    // Cor do cartão - SEM GRADIENTE, APENAS CORES SÓLIDAS
+    // Cor do cartão
     const obterCorCartao = (banco?: string): string => {
         if (!banco) return 'bg-slate-800 border border-slate-700';
         const b = banco.toLowerCase();
@@ -393,32 +423,16 @@ export function MeusCartoes() {
         return 'bg-indigo-800 border-indigo-700';
     };
 
-    // Obter nome do programa selecionado para exibição
+    // Obter nome do programa selecionado (normalizado)
     const getNomeProgramaSelecionado = (): string => {
         if (!programaSelecionado) return "Nenhum";
         const programa = programasDoUsuario.find(p => p.id === programaSelecionado);
-        return programa ? programa.nome : "Programa";
+        return programa ? normalizarNomePrograma(programa.nome) : "Programa";
     };
 
-    // Obter nome do catálogo para o programa selecionado
-    const getNomeCatalogoSelecionado = (): string => {
-        if (!programaSelecionado) return "Nenhum";
-        const programaUsuario = programasDoUsuario.find(p => p.id === programaSelecionado);
-        if (!programaUsuario) return "Programa";
-        
-        // Tenta pegar do programaCatalogo vinculado
-        if (programaUsuario.programaCatalogo) {
-            return programaUsuario.programaCatalogo.nome;
-        }
-        
-        // Se não tiver, busca no catálogo pelo nome
-        const programaCatalogoId: number | null = encontrarProgramaCatalogoId(programaUsuario.nome);
-        if (programaCatalogoId) {
-            const programaCatalogo = programasCatalogo.find(p => p.id === programaCatalogoId);
-            return programaCatalogo?.nome || "Catálogo não encontrado";
-        }
-        
-        return "Não associado ao catálogo";
+    // Verifica se um programa pode ser associado
+    const programaPodeSerAssociado = (nomePrograma: string): boolean => {
+        return mapearProgramaParaCatalogo(nomePrograma) !== null;
     };
 
     return (
@@ -506,14 +520,14 @@ export function MeusCartoes() {
                         </div>
 
                         {/* Link para Programas */}
-                        {programasDoUsuario.length === 0 && (
+                        {programasDoUsuario.length === 0 && !fetching && (
                             <div className="mt-6 p-4 border border-slate-800 rounded-2xl bg-slate-900">
                                 <p className="text-slate-400 text-sm flex items-center gap-2">
                                     <Gift size={14} />
                                     Nenhum programa cadastrado. Para associar cartões a programas:
                                 </p>
                                 <button
-                                    onClick={() => navigate('/programas_catalogo')}
+                                    onClick={() => navigate('/meus-programas')}
                                     className="mt-2 text-indigo-400 hover:text-indigo-300 text-sm font-medium flex items-center gap-1"
                                 >
                                     Cadastrar programas →
@@ -582,14 +596,32 @@ export function MeusCartoes() {
                                                     disabled={loadingProgramas || loadingCatalogo}
                                                 >
                                                     <option value="">Selecione um programa...</option>
-                                                    {programasDoUsuario.map(programa => (
-                                                        <option key={programa.id} value={programa.id}>
-                                                            {programa.nome}
-                                                            {programa.programaCatalogo && ` (${programa.programaCatalogo.nome})`}
-                                                            {programa.saldoPontos > 0 && ` - ${programa.saldoPontos.toLocaleString()} pts`}
-                                                        </option>
-                                                    ))}
+                                                    {programasDoUsuario.map(programa => {
+                                                        const nomeNormalizado = normalizarNomePrograma(programa.nome);
+                                                        const podeAssociar = programaPodeSerAssociado(programa.nome);
+                                                        
+                                                        return (
+                                                            <option 
+                                                                key={programa.id} 
+                                                                value={programa.id}
+                                                                title={podeAssociar ? `Será associado ao catálogo: ${nomeNormalizado}` : 'Não pode ser associado'}
+                                                            >
+                                                                {nomeNormalizado}
+                                                                {programa.saldoPontos > 0 && ` - ${programa.saldoPontos.toLocaleString()} pts`}
+                                                            </option>
+                                                        );
+                                                    })}
                                                 </select>
+                                                
+                                                {/* Aviso sobre programas disponíveis */}
+                                                <div className="mt-2 p-3 bg-amber-900/20 border border-amber-800/50 rounded-lg">
+                                                    <p className="text-xs text-amber-400 font-medium">
+                                                        ⓘ Programas disponíveis: Smiles, Azul, Latam Pass, Livelo, Esfera
+                                                    </p>
+                                                    <p className="text-xs text-amber-500 mt-1">
+                                                        Apenas programas que podem ser mapeados para estes serão mostrados
+                                                    </p>
+                                                </div>
                                                 
                                                 {programaSelecionado && (
                                                     <div className="text-xs text-slate-500 space-y-1">
@@ -597,15 +629,15 @@ export function MeusCartoes() {
                                                             Programa selecionado: <span className="text-emerald-400">{getNomeProgramaSelecionado()}</span>
                                                         </div>
                                                         <div>
-                                                            Será associado ao catálogo: <span className="text-amber-400">{getNomeCatalogoSelecionado()}</span>
+                                                            Será associado ao catálogo: <span className="text-amber-400">{getNomeProgramaSelecionado()}</span>
                                                         </div>
                                                     </div>
                                                 )}
                                             </>
-                                        ) : (
+                                        ) : !loadingProgramas && !loadingCatalogo ? (
                                             <div className="p-4 border border-slate-800 rounded-xl bg-slate-900">
                                                 <p className="text-slate-400 text-sm">
-                                                    Você não tem programas cadastrados.
+                                                    Você não tem programas cadastrados que possam ser associados aos cartões.
                                                 </p>
                                                 <button
                                                     type="button"
@@ -615,7 +647,7 @@ export function MeusCartoes() {
                                                     Cadastrar programas primeiro →
                                                 </button>
                                             </div>
-                                        )}
+                                        ) : null}
                                     </div>
 
                                     {dadosDetectados && (
@@ -682,7 +714,7 @@ export function MeusCartoes() {
                                             <div className="text-right">
                                                 <p className="text-[8px] text-white/40 uppercase font-black tracking-widest">Programa</p>
                                                 <p className="text-[10px] text-white font-bold font-mono truncate max-w-24">
-                                                    {getNomeCatalogoSelecionado()}
+                                                    {getNomeProgramaSelecionado()}
                                                 </p>
                                             </div>
                                         </div>

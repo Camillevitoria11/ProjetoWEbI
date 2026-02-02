@@ -14,7 +14,6 @@ interface AuthHeaders {
     Authorization?: string;
     [key: string]: string | undefined;
 }
-
 // Interceptor para adicionar token
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
