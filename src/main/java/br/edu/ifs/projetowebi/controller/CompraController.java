@@ -79,6 +79,7 @@ public class CompraController {
         }
     }
 
+
     @GetMapping("/usuario")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
         if (usuarioLogado == null) {
