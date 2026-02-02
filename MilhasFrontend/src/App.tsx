@@ -1,3 +1,4 @@
+// src/App.tsx
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Login } from './pages/Login';
@@ -90,6 +91,8 @@ export default function App() {
             </PrivateRoute>
           }
         />
+
+        
 
         {/* REDIRECIONAMENTOS PADRÃO */}
         <Route path="/" element={<Navigate to="/login" replace />} />
