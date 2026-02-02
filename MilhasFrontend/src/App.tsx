@@ -13,7 +13,7 @@ interface RouteProps {
 }
 
 function PrivateRoute({ children }: RouteProps) {
-  const token = localStorage.getItem('@App:token');
+  const token = localStorage.getItem('token') || localStorage.getItem('@App:token');
   const location = useLocation();
 
   if (!token) {
@@ -24,7 +24,7 @@ function PrivateRoute({ children }: RouteProps) {
 }
 
 function PublicRoute({ children }: RouteProps) {
-  const token = localStorage.getItem('@App:token');
+  const token = localStorage.getItem('token'); // ⬅️ MUDADO AQUI: 'token' em vez de '@App:token'
 
   if (token) {
     return <Navigate to="/dashboard" replace />;

@@ -45,6 +45,16 @@ interface ProgramaCatalogo {
     prazoCreditoDias: number;
 }
 
+interface ApiError {
+    response?: {
+        status: number;
+        data?: {
+            message?: string;
+        };
+    };
+    message?: string;
+}
+
 export function MeusCartoes() {
     const navigate = useNavigate();
     
@@ -66,6 +76,25 @@ export function MeusCartoes() {
         return apenasNumeros.replace(/(.{4})/g, '$1 ').trim();
     };
 
+    // Função para verificar se há token válido
+    const verificarAutenticacao = useCallback(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Sessão expirada. Faça login novamente.');
+            navigate('/login');
+            return false;
+        }
+        return true;
+    }, [navigate]);
+
+    // Função para tratar erros de autenticação
+    const tratarErroAutenticacao = useCallback((error: ApiError) => {
+        if (error?.response?.status === 401) {
+            alert('Sessão expirada. Faça login novamente.');
+            navigate('/login');
+        }
+    }, [navigate]);
+
     // Carregar programas do catálogo (Smiles, Azul, etc.)
     const carregarProgramasCatalogo = useCallback(async () => {
         try {
@@ -77,17 +106,24 @@ export function MeusCartoes() {
             
             setProgramasCatalogo(res.data);
         } catch (error) {
-            console.error("Erro ao carregar programas catálogo:", error);
+            const apiError = error as ApiError;
+            console.error("Erro ao carregar programas catálogo:", apiError);
+            
+            // Verifica se é erro de autenticação
+            tratarErroAutenticacao(apiError);
         } finally {
             setLoadingCatalogo(false);
         }
-    }, []);
+    }, [tratarErroAutenticacao]);
 
     // Carregar programas do usuário
     const carregarProgramasDoUsuario = useCallback(async () => {
         try {
             setLoadingProgramas(true);
             console.log('🔄 Carregando programas do usuário...');
+            
+            // Verifica autenticação antes de fazer a requisição
+            if (!verificarAutenticacao()) return;
             
             const res = await api.get('/programas_usuario');
             console.log('✅ Programas do usuário carregados:', res.data);
@@ -99,11 +135,15 @@ export function MeusCartoes() {
                 setProgramaSelecionado(res.data[0].id);
             }
         } catch (error) {
-            console.error("Erro ao carregar programas do usuário:", error);
+            const apiError = error as ApiError;
+            console.error("Erro ao carregar programas do usuário:", apiError);
+            
+            // Verifica se é erro de autenticação
+            tratarErroAutenticacao(apiError);
         } finally {
             setLoadingProgramas(false);
         }
-    }, []);
+    }, [verificarAutenticacao, tratarErroAutenticacao]);
 
     // Carregar cartões do usuário logado
     const carregarCartoes = useCallback(async () => {
@@ -111,23 +151,22 @@ export function MeusCartoes() {
             setFetching(true);
             console.log('🔄 Carregando cartões...');
             
+            // Verifica autenticação antes de fazer a requisição
+            if (!verificarAutenticacao()) return;
+            
             const res = await api.get('/cartoes');
             console.log('✅ Cartões carregados:', res.data);
             setCartoes(res.data);
-        } catch (error: unknown) {
-            console.error("❌ Erro ao carregar cartões:", error);
+        } catch (error) {
+            const apiError = error as ApiError;
+            console.error("❌ Erro ao carregar cartões:", apiError);
             
-            if (error instanceof Error) {
-                const err = error as { response?: { status: number } };
-                if (err.response?.status === 401) {
-                    alert('Sessão expirada. Faça login novamente.');
-                    navigate('/login');
-                }
-            }
+            // Verifica se é erro de autenticação
+            tratarErroAutenticacao(apiError);
         } finally {
             setFetching(false);
         }
-    }, [navigate]);
+    }, [verificarAutenticacao, tratarErroAutenticacao]);
 
     useEffect(() => {
         carregarProgramasCatalogo();
@@ -149,7 +188,9 @@ export function MeusCartoes() {
                         setNomePersonalizado(res.data.nomeExibicao);
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
+                    const apiError = error as ApiError;
+                    console.error("Erro ao detectar BIN:", apiError);
                     setDadosDetectados(null);
                     setErroBin('BIN não reconhecido');
                 });
@@ -241,11 +282,14 @@ export function MeusCartoes() {
             return;
         }
 
+        // Verifica autenticação antes de tentar salvar
+        if (!verificarAutenticacao()) return;
+
         setLoading(true);
         try {
             // Encontra o programa do usuário selecionado
             const programaUsuario = programasDoUsuario.find(p => p.id === programaSelecionado);
-            let programaCatalogoId: number | null = null; // TIPAGEM EXPLÍCITA ADICIONADA
+            let programaCatalogoId: number | null = null;
             let nomeCatalogo = '';
 
             if (programaUsuario) {
@@ -269,10 +313,10 @@ export function MeusCartoes() {
                 nomeCartao: nomePersonalizado.trim() || dadosDetectados.nomeExibicao,
                 bandeira: dadosDetectados.bandeira,
                 multiplicadorPontos: dadosDetectados.multiplicadorPadrao,
-                programaId: programaCatalogoId, // ENVIA O ID DO CATÁLOGO CORRETO
+                programaId: programaCatalogoId,
                 id: 0,
                 nomeUsuario: "",
-                nomePrograma: nomeCatalogo, // Envia também o nome do catálogo
+                nomePrograma: nomeCatalogo,
                 saldoPontos: 0
             };
 
@@ -292,30 +336,20 @@ export function MeusCartoes() {
             await carregarCartoes();
             
             alert('Cartão salvo com sucesso!');
-        } catch (error: unknown) {
-            console.error("❌ Erro ao salvar cartão:", error);
+        } catch (error) {
+            const apiError = error as ApiError;
+            console.error("❌ Erro ao salvar cartão:", apiError);
             
-            if (error instanceof Error) {
-                const err = error as { 
-                    response?: { 
-                        status: number; 
-                        data?: { message?: string } 
-                    } 
-                };
-                
-                if (err.response?.status === 409) {
-                    alert('Este cartão já está cadastrado!');
-                } else if (err.response?.status === 400) {
-                    const message = err.response.data?.message || 'Verifique os dados';
-                    alert(`Erro: ${message}`);
-                } else if (err.response?.status === 401) {
-                    alert('Sessão expirada. Faça login novamente.');
-                    navigate('/login');
-                } else {
-                    alert('Erro ao salvar cartão. Tente novamente.');
-                }
+            if (apiError?.response?.status === 409) {
+                alert('Este cartão já está cadastrado!');
+            } else if (apiError?.response?.status === 400) {
+                const message = apiError.response?.data?.message || 'Verifique os dados';
+                alert(`Erro: ${message}`);
+            } else if (apiError?.response?.status === 401) {
+                alert('Sessão expirada. Faça login novamente.');
+                navigate('/login');
             } else {
-                alert('Erro inesperado. Tente novamente.');
+                alert('Erro ao salvar cartão. Tente novamente.');
             }
         } finally {
             setLoading(false);
@@ -325,13 +359,24 @@ export function MeusCartoes() {
     // Excluir cartão
     const handleExcluir = async (id: number) => {
         if (!window.confirm("Excluir este cartão?")) return;
+        
+        // Verifica autenticação antes de tentar excluir
+        if (!verificarAutenticacao()) return;
+        
         try {
             await api.delete(`/cartoes/${id}`);
             await carregarCartoes();
             alert('Cartão excluído!');
-        } catch (error: unknown) {
-            console.error("Erro ao excluir:", error);
-            alert('Erro ao excluir cartão');
+        } catch (error) {
+            const apiError = error as ApiError;
+            console.error("Erro ao excluir:", apiError);
+            
+            if (apiError?.response?.status === 401) {
+                alert('Sessão expirada. Faça login novamente.');
+                navigate('/login');
+            } else {
+                alert('Erro ao excluir cartão');
+            }
         }
     };
 
@@ -367,7 +412,7 @@ export function MeusCartoes() {
         }
         
         // Se não tiver, busca no catálogo pelo nome
-        const programaCatalogoId: number | null = encontrarProgramaCatalogoId(programaUsuario.nome); // TIPAGEM EXPLÍCITA
+        const programaCatalogoId: number | null = encontrarProgramaCatalogoId(programaUsuario.nome);
         if (programaCatalogoId) {
             const programaCatalogo = programasCatalogo.find(p => p.id === programaCatalogoId);
             return programaCatalogo?.nome || "Catálogo não encontrado";
