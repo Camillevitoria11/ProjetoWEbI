@@ -37,6 +37,7 @@ public class CompraController {
                 .body(CompraSaidaDTO.fromEntity(compraSalva));
     }
 
+
     @GetMapping("/usuario")
     public ResponseEntity<List<CompraSaidaDTO>> listarTodasCompras(@AuthenticationPrincipal UsuarioModel usuarioLogado) {
         if (usuarioLogado == null) {

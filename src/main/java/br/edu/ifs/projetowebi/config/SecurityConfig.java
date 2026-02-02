@@ -37,8 +37,8 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         // Garante que o registro e login específicos funcionem sem token
                         .requestMatchers("/auth/login", "/auth/registrar").permitAll()
-                        // Todas as outras (compras, cartões) EXIGEM o token da Geizielle
-                        .anyRequest().authenticated()
+                        .requestMatchers("/compras/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 // O filtro JWT deve ser o primeiro para validar o usuário logado
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
