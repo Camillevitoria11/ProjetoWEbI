@@ -27,6 +27,7 @@ export function RegistrarCompra() {
     const [cartoes, setCartoes] = useState<Cartao[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingCartoes, setLoadingCartoes] = useState(true);
+    const [sucesso, setSucesso] = useState(false);
     
     const [descricao, setDescricao] = useState('');
     const [valor, setValor] = useState('');
@@ -67,6 +68,17 @@ export function RegistrarCompra() {
         
         carregarCartoes();
     }, [navigate]);
+
+    // Efeito para redirecionar após sucesso
+    useEffect(() => {
+        if (sucesso) {
+            const timer = setTimeout(() => {
+                navigate('/dashboard');
+            }, 1500); // 1.5 segundos antes de redirecionar
+            
+            return () => clearTimeout(timer);
+        }
+    }, [sucesso, navigate]);
 
     const formatarValor = (valor: string) => {
         return valor.replace(/[^\d.]/g, '').replace(/(\..*)\./g, '$1');
@@ -121,14 +133,8 @@ export function RegistrarCompra() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             
-            alert('Compra registrada com sucesso!');
-            
-            setDescricao('');
-            setValor('');
-            if (cartoes.length > 0) {
-                setCartaoId(cartoes[0].id.toString());
-            }
-            setArquivo(null);
+            // Marca como sucesso para mostrar mensagem e redirecionar
+            setSucesso(true);
             
         } catch (error: unknown) {
             const apiError = error as ApiError;
@@ -145,7 +151,6 @@ export function RegistrarCompra() {
             }
             
             setErro(mensagemErro);
-        } finally {
             setLoading(false);
         }
     };
@@ -196,6 +201,28 @@ export function RegistrarCompra() {
                     <div className="text-center py-12">
                         <Loader2 className="animate-spin text-indigo-500 w-12 h-12 mx-auto mb-4" />
                         <p className="text-slate-400">Carregando seus cartões...</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Tela de sucesso
+    if (sucesso) {
+        return (
+            <div className="min-h-screen bg-slate-950 text-white p-4 md:p-8 flex justify-center items-start">
+                <div className="w-full max-w-2xl bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm mt-8">
+                    <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        </div>
+                        <h3 className="text-2xl font-bold text-emerald-400 mb-4">Compra registrada com sucesso!</h3>
+                        <p className="text-slate-400 mb-8">Redirecionando para a dashboard em instantes...</p>
+                        <div className="w-full bg-slate-800 rounded-full h-2">
+                            <div className="bg-emerald-500 h-2 rounded-full animate-pulse"></div>
+                        </div>
                     </div>
                 </div>
             </div>

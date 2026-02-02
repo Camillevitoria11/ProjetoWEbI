@@ -24,7 +24,7 @@ function PrivateRoute({ children }: RouteProps) {
 }
 
 function PublicRoute({ children }: RouteProps) {
-  const token = localStorage.getItem('token'); // ⬅️ MUDADO AQUI: 'token' em vez de '@App:token'
+  const token = localStorage.getItem('token');
 
   if (token) {
     return <Navigate to="/dashboard" replace />;
@@ -92,7 +92,6 @@ export default function App() {
           }
         />
 
-        
 
         {/* REDIRECIONAMENTOS PADRÃO */}
         <Route path="/" element={<Navigate to="/login" replace />} />

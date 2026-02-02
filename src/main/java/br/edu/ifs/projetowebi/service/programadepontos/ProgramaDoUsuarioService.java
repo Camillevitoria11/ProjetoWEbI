@@ -22,60 +22,57 @@ public class ProgramaDoUsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final ProgramaCatalogoRepository programaCatalogoRepository;
 
-    // ADAPTAÇÃO: Agora recebe o usuarioId vindo da autenticação do Controller
+    // Salvar um novo programa para o usuário
     public ProgramaDePontosSaidaDTO salvar(ProgramaDePontosForm form, Long usuarioId) {
-        // 1. Busca o usuário pelo ID do Token (Segurança)
+        // 1. Busca o usuário pelo ID
         UsuarioModel usuario = usuarioRepository.findById(usuarioId)
                 .orElseThrow(() -> new NaoEncontradoException("Usuário não encontrado"));
 
-        // 2. Busca o Programa Mestre no Catálogo (Smiles, Azul, etc.)
+        // 2. Busca o programa no catálogo
         ProgramaCatalogoModel programaCatalogo = programaCatalogoRepository.findById(form.getProgramaCatalogoId())
                 .orElseThrow(() -> new NaoEncontradoException("Programa catálogo não encontrado"));
 
-        // 3. (Opcional) Validação: Verifica se o usuário já possui este programa vinculado
-        // Isso evita duplicidade de "contas" do mesmo programa para o mesmo usuário
+        // 3. Verifica se o usuário já possui este programa
         boolean jaExiste = programaRepository.existsByUsuarioIdAndProgramaCatalogoId(usuarioId, programaCatalogo.getId());
         if (jaExiste) {
             throw new IllegalArgumentException("Você já possui este programa de pontos cadastrado.");
         }
 
-        // 4. Instancia o novo Programa do Usuário
+        // 4. Cria o novo programa
         ProgramaDoUsuarioModel programa = new ProgramaDoUsuarioModel();
 
-        // Regra de Negócio: Se o usuário não der um apelido, usa o nome do catálogo (ex: "Smiles")
+        // Define o nome (usa apelido se fornecido, senão usa nome do catálogo)
         String nomeDefinido = (form.getNome() != null && !form.getNome().isBlank())
                 ? form.getNome()
                 : programaCatalogo.getNome();
 
         programa.setNome(nomeDefinido);
-
-        // Regra de Negócio todo programa novo nasce com ZERO pontos
-        programa.setSaldoPontos(0);
-
-        // 5. Estabelece os relacionamentos (FKs)
+        programa.setSaldoPontos(0); // Inicia com zero pontos
         programa.setUsuario(usuario);
         programa.setProgramaCatalogo(programaCatalogo);
 
-        // 6. Salva e converte para DTO
+        // 5. Salva no banco
         ProgramaDoUsuarioModel programaSalvo = programaRepository.save(programa);
 
+        // 6. Retorna DTO
         return toDTO(programaSalvo);
     }
 
-    // ADAPTAÇÃO: Lista apenas os programas do usuário logado
+    // Listar programas de um usuário
     public List<ProgramaDePontosSaidaDTO> listarPorUsuario(Long usuarioId) {
-        // Importante: Você deve criar este método findByUsuarioId no seu ProgramaDoUsuarioRepository
         return programaRepository.findByUsuarioId(usuarioId).stream()
                 .map(this::toDTO)
                 .toList();
     }
 
+    // Buscar programa por ID
     public ProgramaDePontosSaidaDTO buscarID(Long id) {
         ProgramaDoUsuarioModel programa = programaRepository.findById(id)
                 .orElseThrow(() -> new NaoEncontradoException("Programa do usuário não encontrado"));
         return toDTO(programa);
     }
 
+    // Atualizar saldo de pontos
     public ProgramaDePontosSaidaDTO atualizarSaldo(Long id, Integer novoSaldo) {
         ProgramaDoUsuarioModel programa = programaRepository.findById(id)
                 .orElseThrow(() -> new NaoEncontradoException("Programa do usuário não encontrado"));
@@ -86,6 +83,7 @@ public class ProgramaDoUsuarioService {
         return toDTO(programaAtualizado);
     }
 
+    // Deletar programa
     public void deletar(Long id) {
         if (!programaRepository.existsById(id)) {
             throw new NaoEncontradoException("Programa do usuário não encontrado");
@@ -93,6 +91,17 @@ public class ProgramaDoUsuarioService {
         programaRepository.deleteById(id);
     }
 
+    // Método para verificar se o programa pertence ao usuário
+    public void verificarPropriedade(Long programaId, Long usuarioId) {
+        ProgramaDoUsuarioModel programa = programaRepository.findById(programaId)
+                .orElseThrow(() -> new NaoEncontradoException("Programa não encontrado"));
+
+        if (!programa.getUsuario().getId().equals(usuarioId)) {
+            throw new SecurityException("Este programa não pertence ao usuário");
+        }
+    }
+
+    // Converter Model para DTO
     private ProgramaDePontosSaidaDTO toDTO(ProgramaDoUsuarioModel programa) {
         return new ProgramaDePontosSaidaDTO(
                 programa.getId(),

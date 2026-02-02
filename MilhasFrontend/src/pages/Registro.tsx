@@ -28,7 +28,7 @@ export function Registro() {
         } catch (error: unknown) {
             console.error("Erro no cadastro:", error);
             if (axios.isAxiosError(error)) {
-                const mensagem = error.response?.data?.message || "Erro ao criar conta. Tente novamente.";
+                const mensagem = error.response?.data?.message || "Usuario já existe! tente outro email válido.";
                 alert(mensagem);
             } else {
                 alert("Ocorreu um erro inesperado.");
